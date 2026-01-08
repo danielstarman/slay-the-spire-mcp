@@ -19,8 +19,43 @@ Create a plan file (in `.claude/plans/` or location specified) containing:
 
 1. **Design Summary** — What we're building and why (2-3 sentences)
 2. **File Touch Map** — Exactly which files will be created/modified
-3. **Risks** — What could go wrong, edge cases, compatibility concerns
-4. **Invariants** — What must remain true after implementation
+3. **Acceptance Tests** — Tests the implementer must write and pass (see below)
+4. **Risks** — What could go wrong, edge cases, compatibility concerns
+5. **Invariants** — What must remain true after implementation
+
+### Acceptance Tests (TDD)
+
+This project uses Test-Driven Development. Your plan MUST include an **Acceptance Tests** section specifying:
+
+```markdown
+## Acceptance Tests
+
+### Happy Path
+- `test_<name>`: Given <input>, expect <output>
+
+### Edge Cases
+- `test_<name>`: Given <boundary condition>, expect <behavior>
+
+### Error Conditions
+- `test_<name>`: Given <invalid input>, expect <specific error>
+```
+
+Be specific. These tests become the implementer's acceptance criteria — implementation is not complete until all tests pass. The implementer writes these tests first (red), then implements (green).
+
+### Acceptance Test Checklist
+
+Before finalizing acceptance tests, verify each item:
+
+- [ ] **Bidirectional**: If data flows one direction, is the reverse direction also tested?
+- [ ] **Start AND End**: If we detect something starting, do we detect it ending?
+- [ ] **Happy path AND error path**: Both success and failure cases covered?
+- [ ] **Integration points**: Does this component talk to neighbors correctly?
+- [ ] **Full pipeline**: Does data flow from ultimate source to ultimate destination?
+- [ ] **State cleanup**: Is old/stale state cleaned up appropriately?
+- [ ] **Concurrent operations**: Are simultaneous operations handled?
+- [ ] **Reconnection/recovery**: Does recovery after disconnection work?
+
+**The #13 Lesson**: We tested stdin->TCP but forgot TCP->stdout. Always ask: "What's the reverse direction I might be forgetting?"
 
 ## Conventions to Honor (from CLAUDE.md)
 
@@ -34,10 +69,10 @@ Create a plan file (in `.claude/plans/` or location specified) containing:
 
 Check these CLAUDE.md sections:
 - Project Overview (MCP server architecture)
-- Key Dependencies (mcp, spirecomm)
+- Key Dependencies (mcp, pydantic, websockets)
 - CommunicationMod Protocol
 - MCP Tools and Resources
-- Project Structure
+- Monorepo Structure
 
 ## Constraints
 

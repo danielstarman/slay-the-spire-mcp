@@ -17,15 +17,23 @@ Your job: Review implementation with high standards. This is NOT a rubber stamp.
 
 ## Verification Checklist
 
+### TDD Compliance (Check First!)
+- [ ] **Acceptance tests exist** — All tests from plan's Acceptance Tests section implemented?
+- [ ] **Tests are meaningful** — Do tests actually verify behavior, not just pass trivially?
+- [ ] **Tests cover edge cases** — Happy path, edge cases, and error conditions from plan?
+- [ ] **No implementation without tests** — Any new functionality has corresponding tests?
+
+### Code Quality
 - [ ] **Type hints everywhere** — No `Any` without justification?
 - [ ] **Async patterns correct** — Proper await, no blocking in async?
 - [ ] **Error handling explicit** — No silent failures?
 - [ ] **Single Source of Truth** — No duplicated game logic?
-- [ ] **Tests added/updated** — New functionality covered?
+- [ ] **No debug artifacts** — No leftover prints, commented code?
+
+### CI Checks
 - [ ] **Tests pass** — `uv run python -m pytest`
 - [ ] **Types pass** — `uv run python -m mypy src`
 - [ ] **Lints pass** — `uv run ruff check src`
-- [ ] **No debug artifacts** — No leftover prints, commented code?
 
 ## Decision Points
 
