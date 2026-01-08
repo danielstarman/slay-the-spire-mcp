@@ -4,13 +4,37 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Build & Development Commands
 
+This is a monorepo with multiple Python packages. Each package has its own virtual environment.
+
+### MCP Server (server/)
+
 ```bash
-uv sync                    # Install/sync dependencies
-uv run python -m pytest    # Run tests
-uv run python -m mypy src  # Type checking
-uv run ruff check src      # Lint
-uv run ruff format src     # Format code
+cd server
+uv sync                              # Install/sync dependencies
+uv run python -m pytest              # Run tests
+uv run python -m mypy src            # Type checking
+uv run ruff check src                # Lint
+uv run ruff format src               # Format code
 uv run python -m slay_the_spire_mcp  # Run the MCP server directly
+```
+
+### Bridge (bridge/)
+
+```bash
+cd bridge
+uv sync                              # Install/sync dependencies
+uv run python -m pytest              # Run tests
+uv run python -m mypy src            # Type checking
+uv run ruff check src                # Lint
+uv run ruff format src               # Format code
+uv run python -m spire_bridge        # Run the bridge directly
+```
+
+### Root-Level Tests (tests/)
+
+```bash
+# From project root, using server's venv (which has pytest)
+cd server && uv run python -m pytest ../tests
 ```
 
 **Prerequisites**: Python 3.10+ and uv (https://docs.astral.sh/uv/)
@@ -53,7 +77,35 @@ Agent definitions live in **`.claude/agents/`**:
 
 See individual agent files for detailed instructions and checklists.
 
-> **Note**: Tool restrictions in `.claude/agents/` are enforced during auto-delegation and text-based invocation ("use the architect agent"), but NOT when spawning via Task tool with `subagent_type: general-purpose`. The agents still serve as documented conventions and work well with auto-delegation.
+### Spawning Agents via Task Tool
+
+The custom agents in `.claude/agents/` work with auto-delegation ("use the architect agent"), but when spawning explicitly via the Task tool, use `subagent_type: general-purpose` and reference the agent definition in the prompt:
+
+```
+Task(
+  subagent_type="general-purpose",
+  prompt="""You are the Architect agent.
+
+First, read .claude/agents/architect.md for your role, constraints, and deliverables.
+Then read CLAUDE.md for project context.
+
+Your task: [specific task here]
+"""
+)
+```
+
+**Agent prompt prefixes:**
+- **Architect**: "You are the Architect agent. Read `.claude/agents/architect.md` for your role and constraints."
+- **Implementer**: "You are the Implementer agent. Read `.claude/agents/implementer.md` for your role and constraints."
+- **Verifier**: "You are the Verifier agent. Read `.claude/agents/verifier.md` for your role and constraints."
+- **Refactor**: "You are the Refactor agent. Read `.claude/agents/refactor.md` for your role and constraints."
+
+**Why not use built-in subagent types?**
+- Built-in types like `Plan` are read-only (can't write files)
+- `general-purpose` has full tool access
+- Including agent instructions in the prompt preserves the role/constraints
+
+> **Note**: Tool restrictions listed in `.claude/agents/` are advisory when using Task tool — the agent has access to all tools but should follow its documented constraints.
 
 ### Workflow Sequence
 
@@ -176,8 +228,9 @@ Slay the Spire + CommunicationMod (existing mod)
 
 ### Key Dependencies
 
-- **`mcp`** - Official Python MCP SDK
-- **`spirecomm`** - Python wrapper for CommunicationMod protocol
+- **`mcp`** - Official Python MCP SDK (server/)
+- **`pydantic`** - Data validation and models (server/)
+- **`websockets`** - WebSocket communication (server/)
 
 ### CommunicationMod Protocol
 
@@ -195,31 +248,32 @@ Slay the Spire + CommunicationMod (existing mod)
 - `PROCEED` / `RETURN` - Navigation buttons
 - `STATE` - Force state update
 
-### MCP Tools (Planned)
+### MCP Tools (To Be Implemented)
 
 ```python
 # Read-only (primary use case - advisory)
-"slay_the_spire/get_state"      # Full game state
-"slay_the_spire/get_combat"     # Combat-specific state
-"slay_the_spire/get_deck"       # Current deck
-"slay_the_spire/get_map"        # Act map with paths
+"get_state"             # Full game state
+"get_deck"              # Current deck contents
+"get_map"               # Map data with paths
+"get_run_context"       # Run timeline and history
 
 # Action tools (optional - for full control if desired)
-"slay_the_spire/play_card"      # { card_index, target_index? }
-"slay_the_spire/end_turn"       # {}
-"slay_the_spire/use_potion"     # { slot, target_index? }
-"slay_the_spire/choose"         # { choice }
-"slay_the_spire/start_run"      # { class, ascension?, seed? }
+"play_card"             # { card_index, target_index? }
+"end_turn"              # {}
+"use_potion"            # { slot, target_index? }
+"choose"                # { choice }
+"start_run"             # { class, ascension?, seed? }
 ```
 
-### MCP Resources (Planned)
+### MCP Resources (To Be Implemented)
 
 ```
-"slay://state"          # Current full state (subscribe for updates)
-"slay://combat"         # Combat state
-"slay://deck"           # Deck contents
-"slay://map"            # Map data
+"slay://state"          # Current game state (subscribable)
+"slay://deck"           # Current deck
+"slay://run"            # Run context and history
 ```
+
+**Note**: Tools and resources are defined but not yet implemented. See `server/src/slay_the_spire_mcp/tools.py` and `resources.py`.
 
 ## Key Conventions
 
@@ -228,26 +282,100 @@ Slay the Spire + CommunicationMod (existing mod)
 - **Async-first** - MCP SDK uses asyncio
 - **Explicit error handling** - No silent failures
 - **Single Source of Truth** - Game state models defined once, used everywhere
+- **Test-Driven Development** - Write tests first, then implement
 
-## Project Structure (Planned)
+## Test-Driven Development (TDD)
+
+This project practices TDD. The workflow integrates testing into the agent phases:
+
+### TDD in the Agent Workflow
+
+1. **Architect Phase**: Specifies **acceptance tests** as part of the plan
+   - What tests must exist and pass for the feature to be complete
+   - Test cases for happy paths, edge cases, and error conditions
+   - These become the implementer's acceptance criteria
+
+2. **Implementer Phase**: Follows Red-Green-Refactor
+   - **Red**: Write the tests first (they will fail)
+   - **Green**: Write minimal code to make tests pass
+   - **Refactor**: Clean up while keeping tests green
+   - Implementation is not complete until all specified tests pass
+
+3. **Verifier Phase**: Confirms test quality
+   - Are all acceptance tests from the plan implemented?
+   - Do tests actually test the right behavior (not just pass)?
+   - Is coverage adequate for the changed code?
+
+### Test Organization
+
+```
+tests/
+├── unit/                 # Fast, isolated tests
+│   ├── test_models.py
+│   └── test_detection.py
+├── integration/          # Tests with real dependencies
+│   └── test_bridge.py
+└── fixtures/             # Shared test data
+    └── game_states/      # Sample JSON states
+```
+
+### Writing Good Acceptance Tests
+
+In architect plans, specify tests like:
+
+```markdown
+## Acceptance Tests
+
+### Happy Path
+- `test_parse_combat_state`: Given valid combat JSON, returns CombatState with correct monsters
+- `test_detect_card_reward`: Given card reward screen state, detects decision point
+
+### Edge Cases
+- `test_parse_empty_deck`: Given state with no cards, returns empty deck (not error)
+- `test_detect_no_decision`: Given combat mid-turn, returns None (no decision point)
+
+### Error Conditions
+- `test_parse_invalid_json`: Given malformed JSON, raises ParseError with context
+- `test_connection_timeout`: Given no response in 5s, raises ConnectionTimeout
+```
+
+Implementers write these tests first, watch them fail, then implement.
+
+## Monorepo Structure
 
 ```
 slay-the-spire-mcp/
-├── pyproject.toml
-├── CLAUDE.md
-├── .claude/
-│   ├── agents/
-│   ├── skills/
-│   ├── locks/
-│   └── plans/
-├── src/
-│   └── slay_the_spire_mcp/
+├── CLAUDE.md              # This file
+├── docker-compose.yml     # Container orchestration
+├── README.md              # Project overview
+├── .claude/               # Claude Code configuration
+│   ├── agents/            # Agent definitions
+│   ├── skills/            # Custom skills
+│   ├── locks/             # File locking for parallel agents
+│   └── plans/             # Architect plans
+├── mod/                   # Java mod for Slay the Spire
+│   ├── pom.xml            # Maven build
+│   └── src/               # Java source
+├── bridge/                # Python relay bridge
+│   ├── pyproject.toml     # Bridge dependencies (minimal)
+│   └── src/spire_bridge/  # Bridge source
+├── server/                # MCP server (main Python package)
+│   ├── pyproject.toml     # Server dependencies (mcp, pydantic, websockets)
+│   └── src/slay_the_spire_mcp/
 │       ├── __init__.py
-│       ├── __main__.py      # Entry point
-│       ├── server.py        # MCP server setup
-│       ├── bridge.py        # CommunicationMod bridge
-│       ├── models.py        # Game state models
-│       └── tools.py         # MCP tool implementations
-└── tests/
-    └── ...
+│       ├── __main__.py    # Entry point
+│       ├── server.py      # MCP server setup
+│       ├── state.py       # Game state management
+│       ├── models.py      # Pydantic game state models
+│       ├── tools.py       # MCP tool implementations
+│       ├── resources.py   # MCP resource implementations
+│       └── ...
+├── shared/                # Shared resources
+│   ├── card_database/     # Card data
+│   └── schemas/           # JSON schemas
+└── tests/                 # Root-level integration tests
+    ├── fixtures/          # Shared test data
+    └── integration/       # Cross-component tests
 ```
+
+Each Python package (bridge/, server/) has its own virtual environment and pyproject.toml.
