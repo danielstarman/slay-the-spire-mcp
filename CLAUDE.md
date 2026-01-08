@@ -153,6 +153,29 @@ The Verifier phase is a loop, not a one-shot check:
 
 Never declare "Ship it!" without a Verifier pass on the final state. The main conversation should not approve changes that the Verifier hasn't reviewed.
 
+**COMMIT SAFEGUARD — Read This Before Any Commit**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  STOP! Before committing, verify ALL of these:              │
+│                                                             │
+│  □ Verifier agent said "Ship it!" on the FINAL state        │
+│  □ ONE verifier reviewed ALL changes together (not separate │
+│    verifiers per component — they miss integration issues)  │
+│  □ All tests pass                                           │
+│  □ No uncommitted changes were skipped                      │
+│  □ USER APPROVED — Got explicit thumbs up from the user     │
+│                                                             │
+│  If ANY box is unchecked → DO NOT COMMIT                    │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Why ONE verifier?** Multiple verifiers each only see their piece. A single verifier reviewing all changes together catches:
+- Integration bugs between components
+- Inconsistent patterns across files
+- Missing cross-component tests
+- Shared state issues
+
 ### Why Subagents for Everything
 
 - **Context preservation** — Main conversation stays lean, retains history
