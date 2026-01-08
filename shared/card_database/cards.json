@@ -1,0 +1,7 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Static card database - placeholder for full card data",
+  "version": "0.1.0",
+  "note": "This will contain full card stats for reference by Claude",
+  "cards": []
+}

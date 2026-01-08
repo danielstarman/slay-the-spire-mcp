@@ -1,0 +1,33 @@
+{
+  "in_game": true,
+  "screen_type": "CARD_REWARD",
+  "floor": 5,
+  "act": 1,
+  "hp": 65,
+  "max_hp": 80,
+  "gold": 99,
+  "deck": [
+    {"id": "Strike_R", "name": "Strike", "cost": 1, "type": "ATTACK", "upgraded": false},
+    {"id": "Strike_R", "name": "Strike", "cost": 1, "type": "ATTACK", "upgraded": false},
+    {"id": "Strike_R", "name": "Strike", "cost": 1, "type": "ATTACK", "upgraded": false},
+    {"id": "Strike_R", "name": "Strike", "cost": 1, "type": "ATTACK", "upgraded": false},
+    {"id": "Strike_R", "name": "Strike", "cost": 1, "type": "ATTACK", "upgraded": false},
+    {"id": "Defend_R", "name": "Defend", "cost": 1, "type": "SKILL", "upgraded": false},
+    {"id": "Defend_R", "name": "Defend", "cost": 1, "type": "SKILL", "upgraded": false},
+    {"id": "Defend_R", "name": "Defend", "cost": 1, "type": "SKILL", "upgraded": false},
+    {"id": "Defend_R", "name": "Defend", "cost": 1, "type": "SKILL", "upgraded": false},
+    {"id": "Bash", "name": "Bash", "cost": 2, "type": "ATTACK", "upgraded": false}
+  ],
+  "relics": [
+    {"id": "Burning Blood", "name": "Burning Blood", "counter": -1}
+  ],
+  "potions": [
+    {"id": "Potion Slot", "name": "Potion Slot", "can_use": false, "can_discard": false},
+    {"id": "Potion Slot", "name": "Potion Slot", "can_use": false, "can_discard": false},
+    {"id": "Potion Slot", "name": "Potion Slot", "can_use": false, "can_discard": false}
+  ],
+  "choice_list": ["Strike", "Pommel Strike", "Anger"],
+  "seed": 123456789,
+  "class": "IRONCLAD",
+  "ascension": 0
+}

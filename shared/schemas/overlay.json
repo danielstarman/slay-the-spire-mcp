@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://slay-the-spire-mcp/schemas/overlay.json",
+  "title": "OverlayCommand",
+  "description": "Commands sent from MCP server to SpireBridge mod overlay",
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "type": { "const": "analysis" },
+        "decision_type": {
+          "type": "string",
+          "description": "Type of decision (CARD_REWARD, SHOP, REST, etc.)"
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "pct": { "type": "integer", "minimum": 0, "maximum": 100 }
+            },
+            "required": ["name", "pct"]
+          }
+        },
+        "commentary": {
+          "type": "string",
+          "description": "Brief explanation (1-2 sentences)"
+        },
+        "skip_pct": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Percentage preference for skipping/passing"
+        }
+      },
+      "required": ["type", "decision_type", "options"]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": { "const": "clear" }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+# Docker Compose for Slay the Spire MCP Server
+# Orchestrates Python services for local development
+
+services:
+  # MCP Server - main service that Claude connects to
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: slay-the-spire-mcp-server
+    ports:
+      # MCP Streamable HTTP transport
+      - "8000:8000"
+      # Bridge TCP connection
+      - "7777:7777"
+    environment:
+      # MCP server configuration
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=8000
+      - BRIDGE_HOST=0.0.0.0
+      - BRIDGE_PORT=7777
+      # Optional: WebSocket connection to mod overlay
+      - OVERLAY_WS_URL=ws://host.docker.internal:31337
+    volumes:
+      # Mount shared schemas for reference
+      - ./shared:/app/shared:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.socket(); s.connect(('localhost', 8000)); s.close()"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+# Note: The bridge process is NOT containerized
+# It runs on the host machine as a subprocess of the SpireBridge mod
+# and connects to the server container via TCP on port 7777
