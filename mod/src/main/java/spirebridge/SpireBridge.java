@@ -43,6 +43,13 @@ public class SpireBridge implements PostInitializeSubscriber, PostUpdateSubscrib
     public static boolean mustSendGameState = false;
     private static ArrayList<OnStateChangeSubscriber> onStateChangeSubscribers;
 
+    // WebSocket server for overlay communication
+    private static WebSocketServer webSocketServer;
+    private static final String WEBSOCKET_PORT_OPTION = "websocketPort";
+    private static final String WEBSOCKET_ENABLED_OPTION = "websocketEnabled";
+    private static final int DEFAULT_WEBSOCKET_PORT = WebSocketServer.DEFAULT_PORT;
+    private static final boolean DEFAULT_WEBSOCKET_ENABLED = true;
+
     private static SpireConfig communicationConfig;
     private static final String COMMAND_OPTION = "command";
     private static final String GAME_START_OPTION = "runAtGameStart";
@@ -62,6 +69,8 @@ public class SpireBridge implements PostInitializeSubscriber, PostUpdateSubscrib
             defaults.put(GAME_START_OPTION, Boolean.toString(false));
             defaults.put(INITIALIZATION_TIMEOUT_OPTION, Long.toString(DEFAULT_TIMEOUT));
             defaults.put(VERBOSE_OPTION, Boolean.toString(DEFAULT_VERBOSITY));
+            defaults.put(WEBSOCKET_PORT_OPTION, Integer.toString(DEFAULT_WEBSOCKET_PORT));
+            defaults.put(WEBSOCKET_ENABLED_OPTION, Boolean.toString(DEFAULT_WEBSOCKET_ENABLED));
             communicationConfig = new SpireConfig("SpireBridge", "config", defaults);
             String command = communicationConfig.getString(COMMAND_OPTION);
             // I want this to always be saved to the file so people can set it more easily.
@@ -76,6 +85,11 @@ public class SpireBridge implements PostInitializeSubscriber, PostUpdateSubscrib
 
         if(getRunOnGameStartOption()) {
             boolean success = startExternalProcess();
+        }
+
+        // Start WebSocket server if enabled
+        if(getWebSocketEnabledOption()) {
+            startWebSocketServer();
         }
     }
 
@@ -117,6 +131,8 @@ public class SpireBridge implements PostInitializeSubscriber, PostUpdateSubscrib
 
     public void receiveOnStateChange() {
         sendGameState();
+        // Also broadcast to WebSocket clients
+        broadcastToWebSocket();
     }
 
     public static void queueCommand(String command) {
@@ -216,6 +232,44 @@ public class SpireBridge implements PostInitializeSubscriber, PostUpdateSubscrib
                     }
                 });
         settingsPanel.addUIElement(verbosityOption);
+
+        // WebSocket server toggle
+        ModLabeledToggleButton websocketEnabledOption = new ModLabeledToggleButton(
+                "Enable WebSocket server for overlay",
+                350, 450, Settings.CREAM_COLOR, FontHelper.charDescFont,
+                getWebSocketEnabledOption(), settingsPanel, modLabel -> {},
+                modToggleButton -> {
+                    if (communicationConfig != null) {
+                        communicationConfig.setBool(WEBSOCKET_ENABLED_OPTION, modToggleButton.enabled);
+                        try {
+                            communicationConfig.save();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        // Start or stop server based on toggle
+                        if (modToggleButton.enabled) {
+                            startWebSocketServer();
+                        } else {
+                            stopWebSocketServer();
+                        }
+                    }
+                });
+        settingsPanel.addUIElement(websocketEnabledOption);
+
+        // WebSocket status label
+        ModLabel websocketStatusLabel = new ModLabel(
+                "", 350, 400, Settings.CREAM_COLOR, FontHelper.charDescFont,
+                settingsPanel, modLabel -> {
+                    if (isWebSocketServerRunning()) {
+                        int clients = getWebSocketClientCount();
+                        modLabel.text = String.format("WebSocket: Running on port %d (%d client%s)",
+                                getWebSocketPortOption(), clients, clients == 1 ? "" : "s");
+                    } else {
+                        modLabel.text = "WebSocket: Not running";
+                    }
+                });
+        settingsPanel.addUIElement(websocketStatusLabel);
+
         BaseMod.registerModBadge(ImageMaster.loadImage("Icon.png"), MODNAME, AUTHOR, DESCRIPTION, settingsPanel);
     }
 
@@ -237,6 +291,7 @@ public class SpireBridge implements PostInitializeSubscriber, PostUpdateSubscrib
         if(listener != null) {
             listener.destroy();
         }
+        stopWebSocketServer();
     }
 
     private static void sendMessage(String message) {
@@ -298,6 +353,83 @@ public class SpireBridge implements PostInitializeSubscriber, PostUpdateSubscrib
             return DEFAULT_VERBOSITY;
         }
         return communicationConfig.getBool(VERBOSE_OPTION);
+    }
+
+    private static int getWebSocketPortOption() {
+        if (communicationConfig == null) {
+            return DEFAULT_WEBSOCKET_PORT;
+        }
+        return communicationConfig.getInt(WEBSOCKET_PORT_OPTION);
+    }
+
+    private static boolean getWebSocketEnabledOption() {
+        if (communicationConfig == null) {
+            return DEFAULT_WEBSOCKET_ENABLED;
+        }
+        return communicationConfig.getBool(WEBSOCKET_ENABLED_OPTION);
+    }
+
+    /**
+     * Starts the WebSocket server for overlay communication.
+     * @return true if server started successfully, false otherwise
+     */
+    public static boolean startWebSocketServer() {
+        if (webSocketServer != null && webSocketServer.isRunning()) {
+            logger.info("WebSocket server already running");
+            return true;
+        }
+
+        int port = getWebSocketPortOption();
+        webSocketServer = new WebSocketServer(port);
+        boolean success = webSocketServer.startServer();
+
+        if (success) {
+            logger.info("WebSocket server started on port " + port);
+        } else {
+            logger.error("Failed to start WebSocket server on port " + port);
+        }
+
+        return success;
+    }
+
+    /**
+     * Stops the WebSocket server.
+     */
+    public static void stopWebSocketServer() {
+        if (webSocketServer != null) {
+            webSocketServer.stopServer();
+            webSocketServer = null;
+            logger.info("WebSocket server stopped");
+        }
+    }
+
+    /**
+     * Broadcasts the current game state to all connected WebSocket clients.
+     */
+    private static void broadcastToWebSocket() {
+        if (webSocketServer != null && webSocketServer.isRunning()) {
+            String state = GameStateConverter.getCommunicationState();
+            webSocketServer.broadcast(state);
+        }
+    }
+
+    /**
+     * Returns the number of connected WebSocket clients.
+     * @return Number of connected clients, or 0 if server is not running
+     */
+    public static int getWebSocketClientCount() {
+        if (webSocketServer != null && webSocketServer.isRunning()) {
+            return webSocketServer.getClientCount();
+        }
+        return 0;
+    }
+
+    /**
+     * Returns whether the WebSocket server is currently running.
+     * @return true if server is running, false otherwise
+     */
+    public static boolean isWebSocketServerRunning() {
+        return webSocketServer != null && webSocketServer.isRunning();
     }
 
     private boolean startExternalProcess() {
