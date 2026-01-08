@@ -40,18 +40,26 @@ def sample_game_state(game_states_dir: Path) -> dict[str, Any]:
     if fixture_path.exists():
         with open(fixture_path) as f:
             return json.load(f)
-    # Return minimal state if fixture doesn't exist yet
+    # Return minimal state in CommunicationMod format if fixture doesn't exist yet
     return {
+        "available_commands": ["choose", "skip", "state"],
+        "ready_for_command": True,
         "in_game": True,
-        "screen_type": "CARD_REWARD",
-        "floor": 5,
-        "act": 1,
-        "hp": 65,
-        "max_hp": 80,
-        "gold": 99,
-        "deck": [],
-        "relics": [],
-        "potions": [],
-        "choice_list": ["Strike", "Pommel Strike", "Anger"],
-        "seed": 123456789,
+        "game_state": {
+            "screen_type": "CARD_REWARD",
+            "floor": 5,
+            "act": 1,
+            "current_hp": 65,
+            "max_hp": 80,
+            "gold": 99,
+            "block": 0,
+            "deck": [],
+            "relics": [],
+            "potions": [],
+            "choice_list": ["Strike", "Pommel Strike", "Anger"],
+            "screen_state": {},
+            "seed": 123456789,
+            "class": "IRONCLAD",
+            "ascension_level": 0,
+        },
     }

@@ -142,12 +142,9 @@ slay-the-spire-mcp/
 │           ├── overlay.py       # Push analysis to mod
 │           └── terminal.py      # MVP terminal output
 │
-├── shared/                      # Shared schemas/contracts
-│   ├── schemas/
-│   │   ├── game_state.json      # JSON schema for game state
-│   │   └── overlay.json         # JSON schema for overlay commands
+├── shared/                      # Shared resources
 │   └── card_database/
-│       └── cards.json           # Static card data
+│       └── cards.json           # Static card data (placeholder)
 │
 └── tests/
     ├── fixtures/
@@ -224,11 +221,11 @@ slay-the-spire-mcp/
 
 ### 4.4 Shared (`shared/`)
 
-**Purpose**: Contracts between components
+**Purpose**: Shared resources for reference
 
-- `game_state.json` - Schema for state JSON from mod
-- `overlay.json` - Schema for overlay commands to mod
-- `cards.json` - Static card database for Claude reference
+- `cards.json` - Static card database for Claude reference (placeholder)
+
+**Note**: JSON schemas for game state and overlay commands were considered but not implemented. Pydantic models in the server package provide runtime validation instead.
 
 ---
 

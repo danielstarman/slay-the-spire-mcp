@@ -389,6 +389,12 @@ async def run_relay(
         stdin_reader = await create_stdin_reader()
         await relay.run_bidirectional(stdin_reader)
         return 0
+    except asyncio.CancelledError:
+        logger.info("Relay cancelled")
+        return 0
+    except OSError as e:
+        logger.error("Relay I/O error: %s", e)
+        return 1
     except Exception as e:
-        logger.exception("Relay failed: %s", e)
+        logger.exception("Relay failed with unexpected error: %s", e)
         return 1

@@ -174,11 +174,16 @@ class TestMockModeHappyPath:
         # Replay directory with minimal delay
         await mock_provider.replay_directory(fixtures_dir, delay_ms=10)
 
-        # Should have loaded both fixtures (card_reward.json, combat.json in alpha order)
-        assert len(states_received) == 2
-        # card_reward.json comes before combat.json alphabetically
+        # Should have loaded all fixtures in alphabetical order:
+        # card_reward.json, combat.json, event.json, map.json, rest.json, shop.json
+        assert len(states_received) == 6
+        # Verify alphabetical order by screen type
         assert states_received[0].screen_type == "CARD_REWARD"
-        assert states_received[1].screen_type == "NONE"  # Combat
+        assert states_received[1].screen_type == "NONE"  # Combat (screen_type is NONE in combat)
+        assert states_received[2].screen_type == "EVENT"
+        assert states_received[3].screen_type == "MAP"
+        assert states_received[4].screen_type == "REST"
+        assert states_received[5].screen_type == "SHOP_SCREEN"
 
 
 # ==============================================================================
@@ -350,8 +355,8 @@ class TestMockModeIntegration:
             # Initialize (loads directory from env var)
             await mock_provider.initialize()
 
-            # Verify both states were loaded
-            assert len(states_received) == 2
+            # Verify all 6 fixtures were loaded (card_reward, combat, event, map, rest, shop)
+            assert len(states_received) == 6
 
         finally:
             # Restore original env vars

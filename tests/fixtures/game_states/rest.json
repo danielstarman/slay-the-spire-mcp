@@ -1,51 +1,46 @@
 {
-  "available_commands": ["choose", "skip", "state", "potion"],
+  "available_commands": ["choose", "state", "potion"],
   "ready_for_command": true,
   "in_game": true,
   "game_state": {
-    "screen_type": "CARD_REWARD",
-    "screen_name": "Card Reward",
+    "screen_type": "REST",
+    "screen_name": "Rest Site",
     "is_screen_up": true,
-    "room_phase": "COMPLETE",
-    "room_type": "MonsterRoom",
+    "room_phase": "INCOMPLETE",
+    "room_type": "RestRoom",
     "action_phase": "WAITING_ON_USER",
-    "floor": 5,
+    "floor": 6,
     "act": 1,
     "act_boss": "Slime Boss",
-    "current_hp": 65,
+    "current_hp": 55,
     "max_hp": 80,
-    "gold": 99,
+    "gold": 150,
     "block": 0,
     "deck": [
       {"id": "Strike_R", "uuid": "strike-1", "name": "Strike", "cost": 1, "type": "ATTACK", "upgrades": 0, "rarity": "BASIC", "exhausts": false, "ethereal": false},
       {"id": "Strike_R", "uuid": "strike-2", "name": "Strike", "cost": 1, "type": "ATTACK", "upgrades": 0, "rarity": "BASIC", "exhausts": false, "ethereal": false},
       {"id": "Strike_R", "uuid": "strike-3", "name": "Strike", "cost": 1, "type": "ATTACK", "upgrades": 0, "rarity": "BASIC", "exhausts": false, "ethereal": false},
       {"id": "Strike_R", "uuid": "strike-4", "name": "Strike", "cost": 1, "type": "ATTACK", "upgrades": 0, "rarity": "BASIC", "exhausts": false, "ethereal": false},
-      {"id": "Strike_R", "uuid": "strike-5", "name": "Strike", "cost": 1, "type": "ATTACK", "upgrades": 0, "rarity": "BASIC", "exhausts": false, "ethereal": false},
       {"id": "Defend_R", "uuid": "defend-1", "name": "Defend", "cost": 1, "type": "SKILL", "upgrades": 0, "rarity": "BASIC", "exhausts": false, "ethereal": false},
       {"id": "Defend_R", "uuid": "defend-2", "name": "Defend", "cost": 1, "type": "SKILL", "upgrades": 0, "rarity": "BASIC", "exhausts": false, "ethereal": false},
       {"id": "Defend_R", "uuid": "defend-3", "name": "Defend", "cost": 1, "type": "SKILL", "upgrades": 0, "rarity": "BASIC", "exhausts": false, "ethereal": false},
       {"id": "Defend_R", "uuid": "defend-4", "name": "Defend", "cost": 1, "type": "SKILL", "upgrades": 0, "rarity": "BASIC", "exhausts": false, "ethereal": false},
-      {"id": "Bash", "uuid": "bash-1", "name": "Bash", "cost": 2, "type": "ATTACK", "upgrades": 0, "rarity": "BASIC", "exhausts": false, "ethereal": false}
+      {"id": "Bash", "uuid": "bash-1", "name": "Bash", "cost": 2, "type": "ATTACK", "upgrades": 0, "rarity": "BASIC", "exhausts": false, "ethereal": false},
+      {"id": "Anger", "uuid": "anger-1", "name": "Anger", "cost": 0, "type": "ATTACK", "upgrades": 0, "rarity": "COMMON", "exhausts": false, "ethereal": false}
     ],
     "relics": [
       {"id": "Burning Blood", "name": "Burning Blood", "counter": -1}
     ],
     "potions": [
-      {"id": "Potion Slot", "name": "Potion Slot", "can_use": false, "can_discard": false, "requires_target": false},
+      {"id": "Block Potion", "name": "Block Potion", "can_use": true, "can_discard": true, "requires_target": false},
       {"id": "Potion Slot", "name": "Potion Slot", "can_use": false, "can_discard": false, "requires_target": false},
       {"id": "Potion Slot", "name": "Potion Slot", "can_use": false, "can_discard": false, "requires_target": false}
     ],
-    "choice_list": ["Strike", "Pommel Strike", "Anger"],
     "screen_state": {
-      "cards": [
-        {"id": "Strike_R", "name": "Strike", "cost": 1, "type": "ATTACK", "upgrades": 0, "rarity": "COMMON", "exhausts": false, "ethereal": false},
-        {"id": "PommelStrike", "name": "Pommel Strike", "cost": 1, "type": "ATTACK", "upgrades": 0, "rarity": "COMMON", "exhausts": false, "ethereal": false},
-        {"id": "Anger", "name": "Anger", "cost": 0, "type": "ATTACK", "upgrades": 0, "rarity": "COMMON", "exhausts": false, "ethereal": false}
-      ],
-      "bowl_available": false,
-      "skip_available": true
+      "rest_options": ["rest", "smith"],
+      "has_rested": false
     },
+    "choice_list": ["rest", "smith"],
     "seed": 123456789,
     "class": "IRONCLAD",
     "ascension_level": 0,

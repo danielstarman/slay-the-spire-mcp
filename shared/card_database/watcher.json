@@ -1,0 +1,653 @@
+{
+  "character": "Watcher",
+  "cards": [
+    {
+      "id": "strike_p",
+      "name": "Strike",
+      "type": "Attack",
+      "rarity": "Starter",
+      "cost": 1,
+      "description": "Deal 6 damage."
+    },
+    {
+      "id": "defend_p",
+      "name": "Defend",
+      "type": "Skill",
+      "rarity": "Starter",
+      "cost": 1,
+      "description": "Gain 5 Block."
+    },
+    {
+      "id": "eruption",
+      "name": "Eruption",
+      "type": "Attack",
+      "rarity": "Starter",
+      "cost": 1,
+      "description": "Deal 3 damage to a random enemy 3 times."
+    },
+    {
+      "id": "vigilance",
+      "name": "Vigilance",
+      "type": "Skill",
+      "rarity": "Starter",
+      "cost": 1,
+      "description": "Gain 1 Block. Scry 1."
+    },
+    {
+      "id": "acrobatics",
+      "name": "Acrobatics",
+      "type": "Skill",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Draw 1 card. Discard 1 card."
+    },
+    {
+      "id": "blasphemy",
+      "name": "Blasphemy",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 2,
+      "description": "Spend ALL of your Focus. Deal damage equal to the amount spent. Gain Block equal to the amount spent."
+    },
+    {
+      "id": "bludgeon",
+      "name": "Bludgeon",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 2,
+      "description": "Deal 32 damage."
+    },
+    {
+      "id": "bouncing_flask",
+      "name": "Bouncing Flask",
+      "type": "Skill",
+      "rarity": "Common",
+      "cost": 2,
+      "description": "Apply 2 Weak to a random enemy 3 times."
+    },
+    {
+      "id": "brilliance",
+      "name": "Brilliance",
+      "type": "Skill",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Gain 1 Focus."
+    },
+    {
+      "id": "carve_reality",
+      "name": "Carve Reality",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 2,
+      "description": "Deal 12 damage. Scry 2."
+    },
+    {
+      "id": "consecration",
+      "name": "Consecration",
+      "type": "Skill",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Enemies gain 1 Vulnerable. Gain 1 Block."
+    },
+    {
+      "id": "defend_p_watcher",
+      "name": "Defend (Watcher)",
+      "type": "Skill",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Gain 8 Block."
+    },
+    {
+      "id": "fasting",
+      "name": "Fasting",
+      "type": "Skill",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Gain 2 Focus. Start of next turn, lose 1 Focus."
+    },
+    {
+      "id": "follow_up",
+      "name": "Follow Up",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Deal 8 damage. Scry 1."
+    },
+    {
+      "id": "halt",
+      "name": "Halt",
+      "type": "Skill",
+      "rarity": "Common",
+      "cost": 0,
+      "description": "Gain 4 Block. Scry 1."
+    },
+    {
+      "id": "harm",
+      "name": "Harm",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Deal 4 damage to all enemies. Exhaust this card."
+    },
+    {
+      "id": "javelin",
+      "name": "Javelin",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 2,
+      "description": "Deal 4 damage. Gain 4 Block."
+    },
+    {
+      "id": "just_lucky",
+      "name": "Just Lucky",
+      "type": "Skill",
+      "rarity": "Common",
+      "cost": 0,
+      "description": "Draw 1 card. Gain 1 Focus."
+    },
+    {
+      "id": "protect",
+      "name": "Protect",
+      "type": "Skill",
+      "rarity": "Common",
+      "cost": 2,
+      "description": "Gain 12 Block."
+    },
+    {
+      "id": "pummel",
+      "name": "Pummel",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Deal 4 damage to a random enemy 4 times."
+    },
+    {
+      "id": "quickly_slash",
+      "name": "Quickly Slash",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Deal 8 damage. Scry 1."
+    },
+    {
+      "id": "reinforced_body",
+      "name": "Reinforced Body",
+      "type": "Skill",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Gain 4 Block. Gain 1 Focus."
+    },
+    {
+      "id": "sands_of_time",
+      "name": "Sands of Time",
+      "type": "Skill",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Gain 2 Block. Scry 1. Gain 1 Focus."
+    },
+    {
+      "id": "strike_watcher",
+      "name": "Strike (Watcher)",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Deal 9 damage."
+    },
+    {
+      "id": "swivel",
+      "name": "Swivel",
+      "type": "Skill",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Gain 4 Block. Gain 1 Focus."
+    },
+    {
+      "id": "awe",
+      "name": "Awe",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 2,
+      "description": "Deal 14 damage. Exhaust this card. Exile this card instead."
+    },
+    {
+      "id": "battle_hymn",
+      "name": "Battle Hymn",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 3,
+      "description": "Gain 3 Focus. At the end of your turn, deal 3 damage to a random enemy for each card in your hand."
+    },
+    {
+      "id": "battlesmith",
+      "name": "Battlesmith",
+      "type": "Power",
+      "rarity": "Uncommon",
+      "cost": 2,
+      "description": "Whenever you draw a card, gain 1 Block."
+    },
+    {
+      "id": "beta",
+      "name": "Beta",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Deal 7 damage to all enemies. Scry 2."
+    },
+    {
+      "id": "blind",
+      "name": "Blind",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Apply 6 Weak to a random enemy."
+    },
+    {
+      "id": "bow_string",
+      "name": "Bow String",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Deal 3 damage to a random enemy 4 times. Scry 1."
+    },
+    {
+      "id": "bouncing_flask_uncommon",
+      "name": "Cascade",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 2,
+      "description": "Gain 1 Focus for each card in your exhaust pile. Shuffle 1 card from your exhaust pile into your deck."
+    },
+    {
+      "id": "clear_mind",
+      "name": "Clear Mind",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Gain 1 Focus. Draw 1 card."
+    },
+    {
+      "id": "cut_through_fate",
+      "name": "Cut Through Fate",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 2,
+      "description": "Deal 22 damage. Scry 1."
+    },
+    {
+      "id": "evaluate",
+      "name": "Evaluate",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Draw 2 cards. Discard 1 card."
+    },
+    {
+      "id": "expunge",
+      "name": "Expunge",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 2,
+      "description": "Deal 15 damage. If the enemy has a status card, deal 8 additional damage."
+    },
+    {
+      "id": "feed",
+      "name": "Feed",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Deal 10 damage. Upgrade this card."
+    },
+    {
+      "id": "foreign_influence",
+      "name": "Foreign Influence",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 3,
+      "description": "Add 1 random card to your hand. Gain 2 Focus. This card costs 0 Scry X."
+    },
+    {
+      "id": "gaze",
+      "name": "Gaze",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 2,
+      "description": "Deal 12 damage. Scry 2."
+    },
+    {
+      "id": "indignation",
+      "name": "Indignation",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Deal 5 damage. Gain 1 Block. Enter Wrath."
+    },
+    {
+      "id": "inner_peace",
+      "name": "Inner Peace",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Exhaust all Wounds from your hand. Draw 1 card for each discarded."
+    },
+    {
+      "id": "judgement",
+      "name": "Judgment",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 2,
+      "description": "Deal 16 damage. Scry 2."
+    },
+    {
+      "id": "kunai",
+      "name": "Kunai",
+      "type": "Power",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Whenever you attack, gain 1 Block and 1 Focus."
+    },
+    {
+      "id": "like_water",
+      "name": "Like Water",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Gain 7 Block. Scry 1."
+    },
+    {
+      "id": "locusts",
+      "name": "Locusts",
+      "type": "Power",
+      "rarity": "Uncommon",
+      "cost": 2,
+      "description": "At the end of your turn, deal 2 damage to all enemies. At the end of the next 3 turns, deal 1 additional damage."
+    },
+    {
+      "id": "mental_fortress",
+      "name": "Mental Fortress",
+      "type": "Power",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Whenever you Scry, gain 1 Block."
+    },
+    {
+      "id": "nirvana",
+      "name": "Nirvana",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 2,
+      "description": "Gain 2 Focus. Exhaust this card."
+    },
+    {
+      "id": "persecution",
+      "name": "Persecution",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Apply 2 Vulnerable to all enemies. Apply 2 Weak to all enemies."
+    },
+    {
+      "id": "pummel_uncommon",
+      "name": "Ragnarök",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 3,
+      "description": "Deal 24 damage to all enemies. Gain 3 Focus. Exhaust this card."
+    },
+    {
+      "id": "sash_whip",
+      "name": "Sash Whip",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Deal 8 damage. Apply 2 Weak to a random enemy."
+    },
+    {
+      "id": "stance_dance",
+      "name": "Stance Dance",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Enter Stance (your choice)."
+    },
+    {
+      "id": "stasis",
+      "name": "Stasis",
+      "type": "Power",
+      "rarity": "Uncommon",
+      "cost": 2,
+      "description": "Whenever you Scry, gain 1 temporary Strength."
+    },
+    {
+      "id": "searing_blow",
+      "name": "Searing Blow",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 2,
+      "description": "Deal 12 damage. Upgrade this card."
+    },
+    {
+      "id": "tranquility",
+      "name": "Tranquility",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Exhaust all Wounds from your hand. Gain 3 Block for each card discarded. Gain 1 Focus."
+    },
+    {
+      "id": "wallop",
+      "name": "Wallop",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 2,
+      "description": "Deal 16 damage. Gain 4 Block."
+    },
+    {
+      "id": "wave_of_the_hand",
+      "name": "Wave of the Hand",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Push all enemies back 1 space. Gain 1 Focus."
+    },
+    {
+      "id": "windmill_strike",
+      "name": "Windmill Strike",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 2,
+      "description": "Deal 16 damage to all enemies. Scry 1."
+    },
+    {
+      "id": "alpha",
+      "name": "Alpha",
+      "type": "Attack",
+      "rarity": "Rare",
+      "cost": 3,
+      "description": "Deal 18 damage. Scry 2. Gain 1 Focus."
+    },
+    {
+      "id": "amalgam",
+      "name": "Amalgam",
+      "type": "Power",
+      "rarity": "Rare",
+      "cost": 2,
+      "description": "Whenever you play a card, draw 1 card."
+    },
+    {
+      "id": "brass_knuckles",
+      "name": "Brass Knuckles",
+      "type": "Power",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "Whenever you play an Attack, gain 1 Block."
+    },
+    {
+      "id": "chrysalis",
+      "name": "Chrysalis",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 2,
+      "description": "Exhaust this card. You are Strengthened until this card is exhausted."
+    },
+    {
+      "id": "conclude",
+      "name": "Conclude",
+      "type": "Attack",
+      "rarity": "Rare",
+      "cost": 3,
+      "description": "Deal 26 damage. Scry 5. Gain 2 Focus."
+    },
+    {
+      "id": "conjure_blade",
+      "name": "Conjure Blade",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 3,
+      "description": "Add 2 Blades to your hand. Gain 2 Focus."
+    },
+    {
+      "id": "crashing_blow",
+      "name": "Crashing Blow",
+      "type": "Attack",
+      "rarity": "Rare",
+      "cost": 3,
+      "description": "Deal 32 damage. Scry 3."
+    },
+    {
+      "id": "crusade",
+      "name": "Crusade",
+      "type": "Power",
+      "rarity": "Rare",
+      "cost": 2,
+      "description": "Whenever you enter a Stance, gain 2 Block."
+    },
+    {
+      "id": "dandy",
+      "name": "Dandy",
+      "type": "Power",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "Whenever you play a Skill, gain 1 Block."
+    },
+    {
+      "id": "eighth_lambda",
+      "name": "Eighth Lambda",
+      "type": "Power",
+      "rarity": "Rare",
+      "cost": 3,
+      "description": "At the end of your turn, gain 1 Strength. At the end of the next 5 turns, gain 1 additional Strength."
+    },
+    {
+      "id": "empty_body",
+      "name": "Empty Body",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "Gain 4 Block. Scry 2. Gain 2 Focus."
+    },
+    {
+      "id": "establishment",
+      "name": "Establishment",
+      "type": "Power",
+      "rarity": "Rare",
+      "cost": 2,
+      "description": "Whenever you Scry, gain 2 Block."
+    },
+    {
+      "id": "fault_line",
+      "name": "Fault Line",
+      "type": "Attack",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "Deal 5 damage to all enemies. Gain 1 Focus. Scry 1."
+    },
+    {
+      "id": "foresight",
+      "name": "Foresight",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 3,
+      "description": "Scry 5. Gain 3 Focus."
+    },
+    {
+      "id": "fourth_lambda",
+      "name": "Fourth Lambda",
+      "type": "Power",
+      "rarity": "Rare",
+      "cost": 2,
+      "description": "At the end of your turn, gain 1 Strength. At the end of the next 3 turns, gain 1 additional Strength."
+    },
+    {
+      "id": "master_reality",
+      "name": "Master Reality",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "Scry 3. Gain 2 Focus."
+    },
+    {
+      "id": "omniscience",
+      "name": "Omniscience",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 0,
+      "description": "Scry 2. Scry 1 additional time for each card scryed by other cards this turn."
+    },
+    {
+      "id": "protection",
+      "name": "Protection",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "Gain 10 Block. Next turn, gain 1 Focus."
+    },
+    {
+      "id": "scry",
+      "name": "Scry",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "Scry 3. Gain 1 Focus."
+    },
+    {
+      "id": "smite",
+      "name": "Smite",
+      "type": "Attack",
+      "rarity": "Rare",
+      "cost": 2,
+      "description": "Deal 16 damage. Scry 2. Gain 1 Focus."
+    },
+    {
+      "id": "spirit_shield",
+      "name": "Spirit Shield",
+      "type": "Power",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "Whenever you Scry, gain 2 temporary Strength."
+    },
+    {
+      "id": "storm_of_steel",
+      "name": "Storm of Steel",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 2,
+      "description": "Add 1 random Attack to your hand. Gain 2 Focus. Scry 2."
+    },
+    {
+      "id": "third_lambda",
+      "name": "Third Lambda",
+      "type": "Power",
+      "rarity": "Rare",
+      "cost": 2,
+      "description": "At the end of your turn, gain 1 Strength. At the end of the next 2 turns, gain 1 additional Strength."
+    },
+    {
+      "id": "vault",
+      "name": "Vault",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "Enter Defiance. Scry 1."
+    }
+  ]
+}

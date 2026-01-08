@@ -1,0 +1,469 @@
+{
+  "character": "Ironclad",
+  "cards": [
+    {
+      "id": "strike_r",
+      "name": "Strike",
+      "type": "Attack",
+      "rarity": "Starter",
+      "cost": 1,
+      "description": "Deal 6 damage."
+    },
+    {
+      "id": "defend_r",
+      "name": "Defend",
+      "type": "Skill",
+      "rarity": "Starter",
+      "cost": 1,
+      "description": "Gain 5 block."
+    },
+    {
+      "id": "bash",
+      "name": "Bash",
+      "type": "Attack",
+      "rarity": "Starter",
+      "cost": 1,
+      "description": "Deal 8 damage. Apply 2 Vulnerable."
+    },
+    {
+      "id": "anger",
+      "name": "Anger",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Deal 6 damage. This card is played twice."
+    },
+    {
+      "id": "armaments",
+      "name": "Armaments",
+      "type": "Skill",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Gain 1 Strength. Gain 1 block."
+    },
+    {
+      "id": "bludgeon",
+      "name": "Bludgeon",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 3,
+      "description": "Deal 32 damage."
+    },
+    {
+      "id": "body_slam",
+      "name": "Body Slam",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Deal X damage. X equals your block."
+    },
+    {
+      "id": "cleave",
+      "name": "Cleave",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Deal 8 damage to all enemies."
+    },
+    {
+      "id": "headbutt",
+      "name": "Headbutt",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Deal 9 damage. Draw 1 card."
+    },
+    {
+      "id": "heavy_blade",
+      "name": "Heavy Blade",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 2,
+      "description": "Deal 16 damage. This card gains 1 Strength for each point of block. Affected by strength multiple times."
+    },
+    {
+      "id": "iron_wave",
+      "name": "Iron Wave",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Deal 5 damage. Gain 5 block."
+    },
+    {
+      "id": "pummel",
+      "name": "Pummel",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Deal 4 damage 4 times."
+    },
+    {
+      "id": "shrug_it_off",
+      "name": "Shrug It Off",
+      "type": "Skill",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Gain 8 block. Draw 1 card."
+    },
+    {
+      "id": "sword_boomerang",
+      "name": "Sword Boomerang",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Deal 3 damage to 2 random enemies. Repeat 3 times."
+    },
+    {
+      "id": "twin_strike",
+      "name": "Twin Strike",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Deal 5 damage twice."
+    },
+    {
+      "id": "uppercut",
+      "name": "Uppercut",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 2,
+      "description": "Deal 13 damage. Apply 1 Weak and 1 Vulnerable."
+    },
+    {
+      "id": "whirlwind",
+      "name": "Whirlwind",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 3,
+      "description": "Deal 5 damage to all enemies X times. X equals the number of cards in your hand."
+    },
+    {
+      "id": "wild_strike",
+      "name": "Wild Strike",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Deal 7 damage. Enemy attacks gain 1 strength."
+    },
+    {
+      "id": "bellow",
+      "name": "Bellow",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 0,
+      "description": "Gain 1 Strength. This card is played twice."
+    },
+    {
+      "id": "block",
+      "name": "Block",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Gain 12 block."
+    },
+    {
+      "id": "blood_for_blood",
+      "name": "Blood For Blood",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 4,
+      "description": "Deal 18 damage. Deal X additional damage. X equals your lost HP."
+    },
+    {
+      "id": "burning_pact",
+      "name": "Burning Pact",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Exhaust 1 card. Draw 2 cards."
+    },
+    {
+      "id": "carnage",
+      "name": "Carnage",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 3,
+      "description": "Deal 20 damage. Exhaust this card. Play an Exhausted card with the same name as this card with no cost."
+    },
+    {
+      "id": "double_tap",
+      "name": "Double Tap",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "This turn, your next Attack is played twice."
+    },
+    {
+      "id": "dual_wield",
+      "name": "Dual Wield",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Choose 1 of 2 random cards in your hand. Play an exhausted copy of it."
+    },
+    {
+      "id": "feel_no_pain",
+      "name": "Feel No Pain",
+      "type": "Power",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Whenever you Exhaust a card, gain 1 block."
+    },
+    {
+      "id": "fire_breathing",
+      "name": "Fire Breathing",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Deal 6 damage. Gain 1 Strength. All enemy attacks gain 1 strength."
+    },
+    {
+      "id": "flex",
+      "name": "Flex",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 0,
+      "description": "Gain 2 Strength this turn."
+    },
+    {
+      "id": "havoc",
+      "name": "Havoc",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Play the top card of your deck. If it's a card, add its damage to this card's damage."
+    },
+    {
+      "id": "inflame",
+      "name": "Inflame",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Gain 2 Strength."
+    },
+    {
+      "id": "intimidate",
+      "name": "Intimidate",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 0,
+      "description": "Apply 1 Weak to all enemies."
+    },
+    {
+      "id": "mild_touch",
+      "name": "Mild Touch",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 0,
+      "description": "Gain 4 block. Draw 1 card."
+    },
+    {
+      "id": "pummel_uncommon",
+      "name": "Power Through",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Gain 15 block. Take 3 unblockable damage."
+    },
+    {
+      "id": "reaper",
+      "name": "Reaper",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 2,
+      "description": "Deal 4 damage to all enemies. Heal 1 HP for each enemy killed."
+    },
+    {
+      "id": "second_wind",
+      "name": "Second Wind",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Exhaust 1 card. Gain 5 block for each Exhaust card in your discard pile."
+    },
+    {
+      "id": "seeing_red",
+      "name": "Seeing Red",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Exhaust this card. Gain 1 Strength and play an Attack from your discard pile with 0 cost."
+    },
+    {
+      "id": "pummel_rare",
+      "name": "Sever Soul",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Deal 12 damage. Exhaust 1 card in your hand."
+    },
+    {
+      "id": "true_grit",
+      "name": "True Grit",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Gain 7 block. Exhaust 1 card."
+    },
+    {
+      "id": "barrier",
+      "name": "Barrier",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 3,
+      "description": "Gain 32 block."
+    },
+    {
+      "id": "berserk",
+      "name": "Berserk",
+      "type": "Power",
+      "rarity": "Rare",
+      "cost": 0,
+      "description": "Gain 1 Strength. You take 5 additional unblockable damage each turn."
+    },
+    {
+      "id": "pummel_rare2",
+      "name": "Bloodletting",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 0,
+      "description": "Take 3 unblockable damage. Gain 1 Strength. Add this card to your hand."
+    },
+    {
+      "id": "bludgeon_rare",
+      "name": "Brutality",
+      "type": "Power",
+      "rarity": "Rare",
+      "cost": 0,
+      "description": "Whenever you play a card that causes unblockable damage, draw 1 card."
+    },
+    {
+      "id": "demon_form",
+      "name": "Demon Form",
+      "type": "Power",
+      "rarity": "Rare",
+      "cost": 3,
+      "description": "At the start of your turn, gain 2 Strength."
+    },
+    {
+      "id": "disarm",
+      "name": "Disarm",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "Apply 1 Weak to all enemies. Exhaust 1 random card in your hand."
+    },
+    {
+      "id": "double_slash",
+      "name": "Double Slash",
+      "type": "Attack",
+      "rarity": "Rare",
+      "cost": 5,
+      "description": "Deal 12 damage to all enemies."
+    },
+    {
+      "id": "exhume",
+      "name": "Exhume",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "Play a random Exhausted card from your discard pile. Exhaust this card."
+    },
+    {
+      "id": "feed",
+      "name": "Feed",
+      "type": "Attack",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "Deal 10 damage. If this kills an enemy, gain 3 Max HP."
+    },
+    {
+      "id": "fiend_fire",
+      "name": "Fiend Fire",
+      "type": "Attack",
+      "rarity": "Rare",
+      "cost": 2,
+      "description": "Exhaust your hand. Deal 3 damage for each card Exhausted this way."
+    },
+    {
+      "id": "ghastly_armor",
+      "name": "Ghastly Armor",
+      "type": "Power",
+      "rarity": "Rare",
+      "cost": 3,
+      "description": "Whenever you take unblockable damage, apply 1 Weak to all enemies."
+    },
+    {
+      "id": "give_and_take",
+      "name": "Give and Take",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "Gain 7 block. Apply 1 Weak to all enemies. Take 4 unblockable damage."
+    },
+    {
+      "id": "immolate",
+      "name": "Immolate",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "Exhaust your hand. Deal 1 damage to all enemies for each card Exhausted this way."
+    },
+    {
+      "id": "impervious",
+      "name": "Impervious",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "Gain 30 block. Exhaust this card."
+    },
+    {
+      "id": "juggernaut",
+      "name": "Juggernaut",
+      "type": "Power",
+      "rarity": "Rare",
+      "cost": 2,
+      "description": "Whenever you gain block, deal 1 damage to the rightmost enemy."
+    },
+    {
+      "id": "limit_break",
+      "name": "Limit Break",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "Double your Strength. Exhaust this card."
+    },
+    {
+      "id": "metallicize",
+      "name": "Metallicize",
+      "type": "Power",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "At the start of your turn, gain 3 block."
+    },
+    {
+      "id": "pummel_rare3",
+      "name": "Pummel",
+      "type": "Attack",
+      "rarity": "Rare",
+      "cost": 0,
+      "description": "Deal 4 damage. Play another card next turn."
+    },
+    {
+      "id": "reaper_rare",
+      "name": "Pummel",
+      "type": "Attack",
+      "rarity": "Rare",
+      "cost": 0,
+      "description": "Deal 4 damage. Play another card next turn."
+    },
+    {
+      "id": "pummel_rare4",
+      "name": "Shockwave",
+      "type": "Attack",
+      "rarity": "Rare",
+      "cost": 2,
+      "description": "Deal 5 damage to all enemies. Apply 1 Vulnerable to all enemies."
+    }
+  ]
+}

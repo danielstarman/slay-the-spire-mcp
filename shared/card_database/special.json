@@ -1,0 +1,95 @@
+{
+  "type": "Special",
+  "cards": [
+    {
+      "id": "shiv",
+      "name": "Shiv",
+      "type": "Attack",
+      "rarity": "Special",
+      "cost": 0,
+      "description": "Deal 4 damage. Exhaust.",
+      "source": "Silent"
+    },
+    {
+      "id": "smite",
+      "name": "Smite",
+      "type": "Attack",
+      "rarity": "Special",
+      "cost": 1,
+      "description": "Deal 12 damage. Retain. Exhaust.",
+      "source": "Watcher"
+    },
+    {
+      "id": "safety",
+      "name": "Safety",
+      "type": "Skill",
+      "rarity": "Special",
+      "cost": 1,
+      "description": "Retain. Gain 12 Block. Exhaust.",
+      "source": "Watcher"
+    },
+    {
+      "id": "miracle",
+      "name": "Miracle",
+      "type": "Skill",
+      "rarity": "Special",
+      "cost": 0,
+      "description": "Retain. Gain 1 Energy. Exhaust.",
+      "source": "Watcher"
+    },
+    {
+      "id": "insight",
+      "name": "Insight",
+      "type": "Skill",
+      "rarity": "Special",
+      "cost": 0,
+      "description": "Retain. Draw 2 cards. Exhaust.",
+      "source": "Watcher"
+    },
+    {
+      "id": "beta",
+      "name": "Beta",
+      "type": "Skill",
+      "rarity": "Special",
+      "cost": 2,
+      "description": "Shuffle Omega into draw pile. Exhaust.",
+      "source": "Watcher"
+    },
+    {
+      "id": "omega",
+      "name": "Omega",
+      "type": "Attack",
+      "rarity": "Special",
+      "cost": 3,
+      "description": "Deal 50 damage to ALL. Exhaust.",
+      "source": "Watcher"
+    },
+    {
+      "id": "through_violence",
+      "name": "Through Violence",
+      "type": "Attack",
+      "rarity": "Special",
+      "cost": 0,
+      "description": "Retain. Deal 20 damage. Exhaust.",
+      "source": "Watcher"
+    },
+    {
+      "id": "expunger",
+      "name": "Expunger",
+      "type": "Attack",
+      "rarity": "Special",
+      "cost": 1,
+      "description": "Deal 9*X damage. Variable.",
+      "source": "Watcher"
+    },
+    {
+      "id": "jax",
+      "name": "J.A.X.",
+      "type": "Power",
+      "rarity": "Special",
+      "cost": 0,
+      "description": "Lose 3 HP. Gain 2 Strength.",
+      "source": "Generated"
+    }
+  ]
+}

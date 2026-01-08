@@ -14,6 +14,7 @@ from typing import Any
 
 import pytest
 
+from slay_the_spire_mcp.config import Config
 from slay_the_spire_mcp.state import GameStateManager, TCPListener
 
 # ==============================================================================
@@ -74,7 +75,8 @@ class TestAppContext:
         from slay_the_spire_mcp.server import AppContext
 
         state_manager = GameStateManager()
-        ctx = AppContext(state_manager=state_manager, tcp_listener=None)
+        config = Config()
+        ctx = AppContext(state_manager=state_manager, tcp_listener=None, config=config)
 
         assert ctx.state_manager is state_manager
 
@@ -84,9 +86,21 @@ class TestAppContext:
 
         state_manager = GameStateManager()
         listener = TCPListener(state_manager, port=7777)
-        ctx = AppContext(state_manager=state_manager, tcp_listener=listener)
+        config = Config()
+        ctx = AppContext(state_manager=state_manager, tcp_listener=listener, config=config)
 
         assert ctx.tcp_listener is listener
+
+    def test_app_context_holds_config(self) -> None:
+        """AppContext stores Config instance."""
+        from slay_the_spire_mcp.server import AppContext
+
+        state_manager = GameStateManager()
+        config = Config(tcp_port=9999)
+        ctx = AppContext(state_manager=state_manager, tcp_listener=None, config=config)
+
+        assert ctx.config is config
+        assert ctx.config.tcp_port == 9999
 
 
 # ==============================================================================
@@ -103,8 +117,9 @@ class TestMCPLifespan:
 
         server = create_mcp_server()
         port = await get_free_port()
+        config = Config(tcp_port=port)
 
-        async with app_lifespan(server, tcp_port=port) as ctx:
+        async with app_lifespan(server, config=config) as ctx:
             assert ctx.state_manager is not None
             assert isinstance(ctx.state_manager, GameStateManager)
 
@@ -114,8 +129,9 @@ class TestMCPLifespan:
 
         server = create_mcp_server()
         port = await get_free_port()
+        config = Config(tcp_port=port)
 
-        async with app_lifespan(server, tcp_port=port) as ctx:
+        async with app_lifespan(server, config=config) as ctx:
             assert ctx.tcp_listener is not None
             assert ctx.tcp_listener.is_running
 
@@ -130,8 +146,9 @@ class TestMCPLifespan:
 
         server = create_mcp_server()
         port = await get_free_port()
+        config = Config(tcp_port=port)
 
-        async with app_lifespan(server, tcp_port=port) as ctx:
+        async with app_lifespan(server, config=config) as ctx:
             listener = ctx.tcp_listener
             assert listener is not None
             assert listener.is_running
@@ -145,8 +162,9 @@ class TestMCPLifespan:
 
         server = create_mcp_server()
         port = await get_free_port()
+        config = Config(tcp_port=port)
 
-        async with app_lifespan(server, tcp_port=port) as ctx:
+        async with app_lifespan(server, config=config) as ctx:
             # Connect and send state
             reader, writer = await asyncio.open_connection("127.0.0.1", port)
             try:
@@ -199,8 +217,9 @@ class TestStateAccess:
 
         server = create_mcp_server()
         port = await get_free_port()
+        config = Config(tcp_port=port)
 
-        async with app_lifespan(server, tcp_port=port) as ctx:
+        async with app_lifespan(server, config=config) as ctx:
             # Simulate accessing context from within lifespan
             # The get_app_context is a dependency that tools can use
             # For now, we just verify the AppContext structure
@@ -212,8 +231,9 @@ class TestStateAccess:
 
         server = create_mcp_server()
         port = await get_free_port()
+        config = Config(tcp_port=port)
 
-        async with app_lifespan(server, tcp_port=port) as ctx:
+        async with app_lifespan(server, config=config) as ctx:
             # Store reference to state manager
             sm1 = ctx.state_manager
 
@@ -269,11 +289,12 @@ class TestTCPListenerCleanup:
 
         server = create_mcp_server()
         port = await get_free_port()
+        config = Config(tcp_port=port)
 
         listener_ref: TCPListener | None = None
 
         try:
-            async with app_lifespan(server, tcp_port=port) as ctx:
+            async with app_lifespan(server, config=config) as ctx:
                 listener_ref = ctx.tcp_listener
                 assert listener_ref is not None
                 assert listener_ref.is_running
@@ -302,8 +323,9 @@ class TestTCPListenerCleanup:
 
         try:
             # Should raise an error when trying to bind to same port
+            config = Config(tcp_port=port)
             with pytest.raises(OSError):
-                async with app_lifespan(server, tcp_port=port):
+                async with app_lifespan(server, config=config):
                     pass
         finally:
             sock.close()
@@ -315,32 +337,34 @@ class TestTCPListenerCleanup:
 
 
 class TestEnvironmentConfiguration:
-    """Tests for environment-based configuration."""
+    """Tests for environment-based configuration.
+
+    Note: More comprehensive config tests are in test_config.py.
+    These tests verify that server.py correctly uses the config.
+    """
 
     async def test_default_tcp_port(self) -> None:
         """Default TCP port is 7777 when not specified."""
-        from slay_the_spire_mcp.server import DEFAULT_TCP_PORT
+        config = Config()
+        assert config.tcp_port == 7777
 
-        assert DEFAULT_TCP_PORT == 7777
+    async def test_tcp_port_from_config(self) -> None:
+        """TCP port can be configured via Config."""
+        config = Config(tcp_port=9999)
+        assert config.tcp_port == 9999
 
-    async def test_tcp_port_from_env(self) -> None:
-        """TCP port can be configured via environment variable."""
-        import os
+    async def test_lifespan_uses_config_port(self) -> None:
+        """Lifespan uses the port from config."""
+        from slay_the_spire_mcp.server import app_lifespan, create_mcp_server
 
-        from slay_the_spire_mcp.server import get_tcp_port
+        server = create_mcp_server()
+        port = await get_free_port()
+        config = Config(tcp_port=port)
 
-        # Test default
-        original = os.environ.get("STS_TCP_PORT")
-        try:
-            if "STS_TCP_PORT" in os.environ:
-                del os.environ["STS_TCP_PORT"]
-            assert get_tcp_port() == 7777
-
-            # Test custom
-            os.environ["STS_TCP_PORT"] = "9999"
-            assert get_tcp_port() == 9999
-        finally:
-            if original is not None:
-                os.environ["STS_TCP_PORT"] = original
-            elif "STS_TCP_PORT" in os.environ:
-                del os.environ["STS_TCP_PORT"]
+        async with app_lifespan(server, config=config) as ctx:
+            # Verify the config is accessible and has correct port
+            assert ctx.config.tcp_port == port
+            # Verify TCP listener is on the correct port
+            reader, writer = await asyncio.open_connection("127.0.0.1", port)
+            writer.close()
+            await writer.wait_closed()

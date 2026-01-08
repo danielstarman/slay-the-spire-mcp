@@ -14,6 +14,8 @@ from typing import Any, AsyncIterator
 import pytest
 from mcp.server.fastmcp import FastMCP
 
+from slay_the_spire_mcp.config import Config
+
 
 # ==============================================================================
 # Helper Functions
@@ -223,8 +225,9 @@ class TestToolInvocation:
 
         server = create_mcp_server()
         port = await get_free_port()
+        config = Config(tcp_port=port)
 
-        async with app_lifespan(server, tcp_port=port) as ctx:
+        async with app_lifespan(server, config=config) as ctx:
             # Directly test the underlying function with context
             from slay_the_spire_mcp import tools
 
@@ -238,8 +241,9 @@ class TestToolInvocation:
 
         server = create_mcp_server()
         port = await get_free_port()
+        config = Config(tcp_port=port)
 
-        async with app_lifespan(server, tcp_port=port) as ctx:
+        async with app_lifespan(server, config=config) as ctx:
             # Set up state
             state = GameState(
                 in_game=True,

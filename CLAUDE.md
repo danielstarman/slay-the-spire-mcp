@@ -2,6 +2,27 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+---
+
+## STOP — Read Before Any Edit
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  MAIN THREAD: DO NOT EDIT src/ FILES                                   │
+│                                                                         │
+│  Before touching ANY code file, ask yourself:                           │
+│                                                                         │
+│  □ Am I the main conversation thread? → SPAWN A SUBAGENT               │
+│  □ Is this "just a quick fix"? → SPAWN A SUBAGENT (it never is)        │
+│  □ Will I run tests after? → SPAWN A SUBAGENT                          │
+│                                                                         │
+│  The main thread orchestrates. Subagents implement.                     │
+│  See "Agent Workflow" section below for how to spawn.                   │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## Build & Development Commands
 
 This is a monorepo with multiple Python packages. Each package has its own virtual environment.
@@ -394,8 +415,7 @@ slay-the-spire-mcp/
 │       ├── resources.py   # MCP resource implementations
 │       └── ...
 ├── shared/                # Shared resources
-│   ├── card_database/     # Card data
-│   └── schemas/           # JSON schemas
+│   └── card_database/     # Card data
 └── tests/                 # Root-level integration tests
     ├── fixtures/          # Shared test data
     └── integration/       # Cross-component tests

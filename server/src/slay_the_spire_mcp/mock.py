@@ -243,39 +243,64 @@ class MockStateProvider:
     def _parse_fixture_data(self, data: dict[str, Any]) -> GameState:
         """Parse fixture data into a GameState.
 
-        Fixture files contain raw game state (not message-wrapped).
+        Supports two fixture formats:
+
+        1. CommunicationMod format (preferred):
+        {
+            "available_commands": [...],
+            "ready_for_command": true,
+            "in_game": true,
+            "game_state": { ... game state fields ... }
+        }
+
+        2. Legacy format (raw game state, not message-wrapped):
+        {
+            "screen_type": "...",
+            "floor": ...,
+            ...
+        }
 
         Args:
-            data: Raw fixture data dictionary
+            data: Fixture data dictionary
 
         Returns:
             Parsed GameState object
         """
         from slay_the_spire_mcp.models import Card, Potion, Relic
 
+        # Handle CommunicationMod format (game_state nested)
+        if "game_state" in data:
+            game_state_data = data.get("game_state", {})
+            # in_game can be at top level or in game_state
+            in_game = data.get("in_game", game_state_data.get("in_game", False))
+        else:
+            # Legacy format - data is the game state directly
+            game_state_data = data
+            in_game = data.get("in_game", False)
+
         # Parse deck cards
-        deck_data = data.get("deck", [])
+        deck_data = game_state_data.get("deck", [])
         deck = [
             Card(**card) if isinstance(card, dict) else Card(name=str(card))
             for card in deck_data
         ]
 
         # Parse relics
-        relics_data = data.get("relics", [])
+        relics_data = game_state_data.get("relics", [])
         relics = [
             Relic(**relic) if isinstance(relic, dict) else Relic(name=str(relic))
             for relic in relics_data
         ]
 
         # Parse potions
-        potions_data = data.get("potions", [])
+        potions_data = game_state_data.get("potions", [])
         potions = [
             Potion(**potion) if isinstance(potion, dict) else Potion(name=str(potion))
             for potion in potions_data
         ]
 
         # Handle screen_state - might be string or dict
-        raw_screen_state = data.get("screen_state", {})
+        raw_screen_state = game_state_data.get("screen_state", {})
         if isinstance(raw_screen_state, str):
             screen_state = {"name": raw_screen_state} if raw_screen_state else {}
         elif isinstance(raw_screen_state, dict):
@@ -283,20 +308,26 @@ class MockStateProvider:
         else:
             screen_state = {}
 
+        # HP field: CommunicationMod uses "current_hp", legacy uses "hp"
+        hp = game_state_data.get("current_hp", game_state_data.get("hp", 0))
+
+        # Block field: CommunicationMod uses "block", legacy uses "current_block"
+        block = game_state_data.get("block", game_state_data.get("current_block", 0))
+
         return GameState(
-            in_game=data.get("in_game", False),
-            screen_type=data.get("screen_type", "NONE"),
-            floor=data.get("floor", 0),
-            act=data.get("act", 1),
-            act_boss=data.get("act_boss"),
-            seed=data.get("seed"),
-            hp=data.get("hp", 0),
-            max_hp=data.get("max_hp", 0),
-            gold=data.get("gold", 0),
-            current_block=data.get("current_block", 0),
+            in_game=in_game,
+            screen_type=game_state_data.get("screen_type", "NONE"),
+            floor=game_state_data.get("floor", 0),
+            act=game_state_data.get("act", 1),
+            act_boss=game_state_data.get("act_boss"),
+            seed=game_state_data.get("seed"),
+            hp=hp,
+            max_hp=game_state_data.get("max_hp", 0),
+            gold=game_state_data.get("gold", 0),
+            current_block=block,
             deck=deck,
             relics=relics,
             potions=potions,
-            choice_list=data.get("choice_list", []),
+            choice_list=game_state_data.get("choice_list", []),
             screen_state=screen_state,
         )

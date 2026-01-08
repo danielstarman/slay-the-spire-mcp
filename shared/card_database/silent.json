@@ -1,0 +1,445 @@
+{
+  "character": "Silent",
+  "cards": [
+    {
+      "id": "strike_p",
+      "name": "Strike",
+      "type": "Attack",
+      "rarity": "Starter",
+      "cost": 1,
+      "description": "Deal 6 damage."
+    },
+    {
+      "id": "defend_p",
+      "name": "Defend",
+      "type": "Skill",
+      "rarity": "Starter",
+      "cost": 1,
+      "description": "Gain 3 block."
+    },
+    {
+      "id": "survivor",
+      "name": "Survivor",
+      "type": "Skill",
+      "rarity": "Starter",
+      "cost": 1,
+      "description": "Gain 2 block. Exhaust."
+    },
+    {
+      "id": "neutralize",
+      "name": "Neutralize",
+      "type": "Attack",
+      "rarity": "Starter",
+      "cost": 0,
+      "description": "Deal 3 damage. Exhaust."
+    },
+    {
+      "id": "acrobatics",
+      "name": "Acrobatics",
+      "type": "Skill",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Draw 3 cards. Discard 1 card."
+    },
+    {
+      "id": "backstab",
+      "name": "Backstab",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 0,
+      "description": "Deal 8 damage. Combo: Deal 8 additional damage."
+    },
+    {
+      "id": "blade_dance",
+      "name": "Blade Dance",
+      "type": "Skill",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Gain 5 block. Gain 2 strength."
+    },
+    {
+      "id": "bludgeon",
+      "name": "Bludgeon",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 3,
+      "description": "Deal 32 damage."
+    },
+    {
+      "id": "bouncing_flask",
+      "name": "Bouncing Flask",
+      "type": "Skill",
+      "rarity": "Common",
+      "cost": 2,
+      "description": "Apply 2 poison to a random enemy 3 times."
+    },
+    {
+      "id": "cloak_and_dagger",
+      "name": "Cloak and Dagger",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Deal 10 damage. Gain 4 block."
+    },
+    {
+      "id": "deadly_poison",
+      "name": "Deadly Poison",
+      "type": "Skill",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Apply 5 poison to target enemy."
+    },
+    {
+      "id": "deflect",
+      "name": "Deflect",
+      "type": "Skill",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Gain 4 block."
+    },
+    {
+      "id": "die_die_die",
+      "name": "Die Die Die",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Deal 18 damage. Exhaust."
+    },
+    {
+      "id": "envenom",
+      "name": "Envenom",
+      "type": "Skill",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Your attacks apply 1 additional poison this turn."
+    },
+    {
+      "id": "footwork",
+      "name": "Footwork",
+      "type": "Skill",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Gain 2 block. Gain 1 dexterity."
+    },
+    {
+      "id": "leg_sweep",
+      "name": "Leg Sweep",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 2,
+      "description": "Deal 5 damage. Gain 5 block to all attacks played this turn."
+    },
+    {
+      "id": "piercing_wail",
+      "name": "Piercing Wail",
+      "type": "Skill",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "All enemies lose 4 strength."
+    },
+    {
+      "id": "quick_slash",
+      "name": "Quick Slash",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Deal 8 damage. Combo: Draw 1 card."
+    },
+    {
+      "id": "sucker_punch",
+      "name": "Sucker Punch",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Deal 7 damage. Combo: Deal 7 additional damage."
+    },
+    {
+      "id": "survivor",
+      "name": "Survivor",
+      "type": "Skill",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Gain 2 block. Exhaust."
+    },
+    {
+      "id": "accuracy",
+      "name": "Accuracy",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Your next attack deals 20% more damage. Can be played multiple times per turn."
+    },
+    {
+      "id": "adrenaline",
+      "name": "Adrenaline",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 0,
+      "description": "Gain 1 strength. Draw 1 card. Exhaust."
+    },
+    {
+      "id": "all_out_attack",
+      "name": "All Out Attack",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Deal 10 damage to all enemies."
+    },
+    {
+      "id": "calculated_gamble",
+      "name": "Calculated Gamble",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 0,
+      "description": "Discard your hand. Draw that many cards."
+    },
+    {
+      "id": "catalyst",
+      "name": "Catalyst",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Double poison on a target enemy."
+    },
+    {
+      "id": "choke",
+      "name": "Choke",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 2,
+      "description": "Deal 12 damage. Apply 2 poison to target enemy."
+    },
+    {
+      "id": "dash",
+      "name": "Dash",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 2,
+      "description": "Gain 7 block. Gain 2 strength."
+    },
+    {
+      "id": "distraction",
+      "name": "Distraction",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Enemy loses 2 strength. Exhaust."
+    },
+    {
+      "id": "evasion",
+      "name": "Evasion",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Gain 4 dexterity. Exhaust."
+    },
+    {
+      "id": "feint",
+      "name": "Feint",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Gain 4 block. Discard 1 card."
+    },
+    {
+      "id": "finisher",
+      "name": "Finisher",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Deal 8 damage. Combo: Deal 15 additional damage."
+    },
+    {
+      "id": "glass_knife",
+      "name": "Glass Knife",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Deal 12 damage. Exhaust."
+    },
+    {
+      "id": "malaise",
+      "name": "Malaise",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 2,
+      "description": "Target enemy loses 4 strength."
+    },
+    {
+      "id": "phantasmal_killer",
+      "name": "Phantasmal Killer",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 3,
+      "description": "Deal 32 damage. Exhaust."
+    },
+    {
+      "id": "poison_spear",
+      "name": "Poison Spear",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Deal 10 damage. Apply 2 poison to target enemy."
+    },
+    {
+      "id": "preparation",
+      "name": "Preparation",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 0,
+      "description": "The next Skill card you play costs 1 less this turn. Exhaust."
+    },
+    {
+      "id": "protect",
+      "name": "Protect",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 2,
+      "description": "Gain 8 block."
+    },
+    {
+      "id": "pummel",
+      "name": "Pummel",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Deal 4 damage. This card is played twice."
+    },
+    {
+      "id": "accuracy_plus",
+      "name": "Accuracy+",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "Your next attack deals 50% more damage. Can be played multiple times per turn."
+    },
+    {
+      "id": "adrenaline_plus",
+      "name": "Adrenaline+",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 0,
+      "description": "Gain 2 strength. Draw 2 cards. Exhaust."
+    },
+    {
+      "id": "bane",
+      "name": "Bane",
+      "type": "Attack",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "Deal 7 damage. If the enemy is poisoned, deal 7 additional damage."
+    },
+    {
+      "id": "bouncing_flask_plus",
+      "name": "Bouncing Flask+",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 2,
+      "description": "Apply 3 poison to a random enemy 4 times."
+    },
+    {
+      "id": "burst",
+      "name": "Burst",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "This turn, your next attack plays twice."
+    },
+    {
+      "id": "cloak_and_dagger_plus",
+      "name": "Cloak and Dagger+",
+      "type": "Attack",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "Deal 13 damage. Gain 5 block."
+    },
+    {
+      "id": "corpse_explosion",
+      "name": "Corpse Explosion",
+      "type": "Attack",
+      "rarity": "Rare",
+      "cost": 2,
+      "description": "Deal 2 damage to all enemies for each poison applied to them."
+    },
+    {
+      "id": "deadly_poison_plus",
+      "name": "Deadly Poison+",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "Apply 7 poison to target enemy."
+    },
+    {
+      "id": "die_die_die_plus",
+      "name": "Die Die Die+",
+      "type": "Attack",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "Deal 24 damage. Exhaust."
+    },
+    {
+      "id": "footwork_plus",
+      "name": "Footwork+",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "Gain 3 block. Gain 1 dexterity."
+    },
+    {
+      "id": "legwork",
+      "name": "Legwork",
+      "type": "Attack",
+      "rarity": "Rare",
+      "cost": 2,
+      "description": "Deal 8 damage. Gain 8 block."
+    },
+    {
+      "id": "noxious_fumes",
+      "name": "Noxious Fumes",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "Apply 1 poison to all enemies. Gain 1 weak on all attacks this turn."
+    },
+    {
+      "id": "precise_strike",
+      "name": "Precise Strike",
+      "type": "Attack",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "Deal 12 damage. Combo: Draw 2 cards."
+    },
+    {
+      "id": "re_position",
+      "name": "Re-position",
+      "type": "Attack",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "Deal 8 damage. Gain 8 block."
+    },
+    {
+      "id": "riddle_with_holes",
+      "name": "Riddle with Holes",
+      "type": "Attack",
+      "rarity": "Rare",
+      "cost": 2,
+      "description": "Deal 32 damage. Apply 3 poison to the enemy."
+    },
+    {
+      "id": "storm_of_steel",
+      "name": "Storm of Steel",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "Gain 2 block. Gain 2 artifact charge."
+    },
+    {
+      "id": "thousand_cuts",
+      "name": "Thousand Cuts",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 2,
+      "description": "Whenever you play a card, deal 1 damage to all enemies until end of turn."
+    }
+  ]
+}

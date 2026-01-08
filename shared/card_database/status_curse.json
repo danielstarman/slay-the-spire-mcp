@@ -1,0 +1,149 @@
+{
+  "type": "Status and Curse",
+  "cards": [
+    {
+      "id": "wound",
+      "name": "Wound",
+      "type": "Status",
+      "rarity": "Status",
+      "cost": -2,
+      "description": "Unplayable."
+    },
+    {
+      "id": "burn",
+      "name": "Burn",
+      "type": "Status",
+      "rarity": "Status",
+      "cost": -2,
+      "description": "Unplayable. Take 2 damage at end of turn if in hand."
+    },
+    {
+      "id": "dazed",
+      "name": "Dazed",
+      "type": "Status",
+      "rarity": "Status",
+      "cost": -2,
+      "description": "Unplayable. Ethereal."
+    },
+    {
+      "id": "slimed",
+      "name": "Slimed",
+      "type": "Status",
+      "rarity": "Status",
+      "cost": 1,
+      "description": "Exhaust."
+    },
+    {
+      "id": "void",
+      "name": "Void",
+      "type": "Status",
+      "rarity": "Status",
+      "cost": -2,
+      "description": "Unplayable. Ethereal. Lose 1 Energy when drawn."
+    },
+    {
+      "id": "ascenders_bane",
+      "name": "Ascender's Bane",
+      "type": "Curse",
+      "rarity": "Curse",
+      "cost": -2,
+      "description": "Unplayable. Ethereal. Cannot be removed."
+    },
+    {
+      "id": "clumsy",
+      "name": "Clumsy",
+      "type": "Curse",
+      "rarity": "Curse",
+      "cost": -2,
+      "description": "Unplayable. Ethereal."
+    },
+    {
+      "id": "decay",
+      "name": "Decay",
+      "type": "Curse",
+      "rarity": "Curse",
+      "cost": -2,
+      "description": "Unplayable. Take 2 damage at end of turn."
+    },
+    {
+      "id": "doubt",
+      "name": "Doubt",
+      "type": "Curse",
+      "rarity": "Curse",
+      "cost": -2,
+      "description": "Unplayable. Gain 1 Weak at end of turn."
+    },
+    {
+      "id": "injury",
+      "name": "Injury",
+      "type": "Curse",
+      "rarity": "Curse",
+      "cost": -2,
+      "description": "Unplayable."
+    },
+    {
+      "id": "necronomicurse",
+      "name": "Necronomicurse",
+      "type": "Curse",
+      "rarity": "Curse",
+      "cost": -2,
+      "description": "Unplayable. Cannot be removed except by removal."
+    },
+    {
+      "id": "normality",
+      "name": "Normality",
+      "type": "Curse",
+      "rarity": "Curse",
+      "cost": -2,
+      "description": "Unplayable. Cannot play more than 3 cards."
+    },
+    {
+      "id": "pain",
+      "name": "Pain",
+      "type": "Curse",
+      "rarity": "Curse",
+      "cost": -2,
+      "description": "Unplayable. Lose 1 HP when played another card."
+    },
+    {
+      "id": "parasite",
+      "name": "Parasite",
+      "type": "Curse",
+      "rarity": "Curse",
+      "cost": -2,
+      "description": "Unplayable. Lose 3 Max HP if removed."
+    },
+    {
+      "id": "pride",
+      "name": "Pride",
+      "type": "Curse",
+      "rarity": "Curse",
+      "cost": -2,
+      "description": "Innate. Exhaust. Add copy at end of turn."
+    },
+    {
+      "id": "regret",
+      "name": "Regret",
+      "type": "Curse",
+      "rarity": "Curse",
+      "cost": -2,
+      "description": "Unplayable. Lose HP equal to hand size at end of turn."
+    },
+    {
+      "id": "shame",
+      "name": "Shame",
+      "type": "Curse",
+      "rarity": "Curse",
+      "cost": -2,
+      "description": "Unplayable. Gain 1 Frail at end of turn."
+    },
+    {
+      "id": "writhe",
+      "name": "Writhe",
+      "type": "Curse",
+      "rarity": "Curse",
+      "cost": -2,
+      "description": "Unplayable. Innate."
+    }
+  ]
+}

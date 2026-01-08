@@ -31,11 +31,22 @@ def setup_logging() -> None:
 
 def main() -> int:
     """Main entry point."""
+    logger = logging.getLogger(__name__)
     setup_logging()
 
     # Get host/port from environment or use defaults
     host = os.environ.get("SPIRE_BRIDGE_HOST", DEFAULT_HOST)
-    port = int(os.environ.get("SPIRE_BRIDGE_PORT", str(DEFAULT_PORT)))
+    port_str = os.environ.get("SPIRE_BRIDGE_PORT", str(DEFAULT_PORT))
+    try:
+        port = int(port_str)
+    except ValueError:
+        logger.error(
+            "Invalid SPIRE_BRIDGE_PORT value '%s', must be an integer. "
+            "Using default port %d",
+            port_str,
+            DEFAULT_PORT,
+        )
+        port = DEFAULT_PORT
 
     # Run the async relay
     return asyncio.run(run_relay(host=host, port=port))

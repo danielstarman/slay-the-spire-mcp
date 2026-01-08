@@ -1,20 +1,20 @@
 """FastMCP server setup.
 
-This module configures and runs the MCP server with Streamable HTTP transport
-on port 8000.
+This module configures and runs the MCP server with Streamable HTTP transport.
 
 Key responsibilities:
 - Initialize FastMCP server with lifespan management
-- Start TCP listener for bridge connection on configurable port (default :7777)
+- Start TCP listener for bridge connection on configurable port
 - Provide shared state context for tools and resources
 - Register MCP tools, resources, and prompts
+
+Configuration is managed via the config module. See config.py for details.
 """
 
 from __future__ import annotations
 
 import json
 import logging
-import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
@@ -25,13 +25,10 @@ from mcp.server.session import ServerSession
 from slay_the_spire_mcp import prompts as prompt_impl
 from slay_the_spire_mcp import resources as resource_impl
 from slay_the_spire_mcp import tools as tool_impl
+from slay_the_spire_mcp.config import Config, get_config
 from slay_the_spire_mcp.state import GameStateManager, TCPListener
 
 logger = logging.getLogger(__name__)
-
-# Default configuration
-DEFAULT_TCP_PORT = 7777
-DEFAULT_TCP_HOST = "127.0.0.1"
 
 
 @dataclass
@@ -44,47 +41,22 @@ class AppContext:
     Attributes:
         state_manager: GameStateManager instance that maintains current game state
         tcp_listener: TCPListener instance for receiving state from bridge (may be None)
+        config: Application configuration
     """
 
     state_manager: GameStateManager
     tcp_listener: TCPListener | None
+    config: Config
 
 
 # Type alias for MCP Context with our AppContext
 MCPContext = Context[ServerSession, AppContext]
 
 
-def get_tcp_port() -> int:
-    """Get TCP port from environment or use default.
-
-    Returns:
-        TCP port number (default: 7777)
-    """
-    port_str = os.environ.get("STS_TCP_PORT", "")
-    if port_str:
-        try:
-            return int(port_str)
-        except ValueError:
-            logger.warning(
-                f"Invalid STS_TCP_PORT value '{port_str}', using default {DEFAULT_TCP_PORT}"
-            )
-    return DEFAULT_TCP_PORT
-
-
-def get_tcp_host() -> str:
-    """Get TCP host from environment or use default.
-
-    Returns:
-        TCP host address (default: 127.0.0.1)
-    """
-    return os.environ.get("STS_TCP_HOST", DEFAULT_TCP_HOST)
-
-
 @asynccontextmanager
 async def app_lifespan(
     server: FastMCP,  # noqa: ARG001 - Required by FastMCP lifespan signature
-    tcp_host: str | None = None,
-    tcp_port: int | None = None,
+    config: Config | None = None,
 ) -> AsyncIterator[AppContext]:
     """Manage application lifecycle with type-safe context.
 
@@ -96,28 +68,30 @@ async def app_lifespan(
 
     Args:
         server: FastMCP server instance (required by lifespan protocol)
-        tcp_host: TCP host to bind (default: from env or 127.0.0.1)
-        tcp_port: TCP port to bind (default: from env or 7777)
+        config: Application configuration (default: from get_config())
 
     Yields:
-        AppContext containing state_manager and tcp_listener
+        AppContext containing state_manager, tcp_listener, and config
     """
-    # Use provided values or get from environment
-    host = tcp_host if tcp_host is not None else get_tcp_host()
-    port = tcp_port if tcp_port is not None else get_tcp_port()
+    # Use provided config or get from singleton
+    cfg = config if config is not None else get_config()
 
     # Create state manager
     state_manager = GameStateManager()
     logger.info("GameStateManager initialized")
 
     # Create and start TCP listener
-    tcp_listener = TCPListener(state_manager, host=host, port=port)
+    tcp_listener = TCPListener(state_manager, host=cfg.tcp_host, port=cfg.tcp_port)
 
     try:
         await tcp_listener.start()
-        logger.info(f"TCP listener started on {host}:{port}")
+        logger.info(f"TCP listener started on {cfg.tcp_host}:{cfg.tcp_port}")
 
-        yield AppContext(state_manager=state_manager, tcp_listener=tcp_listener)
+        yield AppContext(
+            state_manager=state_manager,
+            tcp_listener=tcp_listener,
+            config=cfg,
+        )
 
     finally:
         # Always stop TCP listener on shutdown

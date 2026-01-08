@@ -5,9 +5,12 @@ Pydantic models for Slay the Spire game entities.
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
+
+logger = logging.getLogger(__name__)
 
 
 class BaseGameModel(BaseModel):
@@ -135,7 +138,17 @@ class CombatState(BaseGameModel):
 def parse_game_state_from_message(message: dict[str, Any]) -> GameState | None:
     """Parse a game state from a bridge message.
 
-    The bridge sends messages with format:
+    Supports two message formats:
+
+    1. CommunicationMod format (preferred):
+    {
+        "available_commands": [...],
+        "ready_for_command": true,
+        "in_game": true,
+        "game_state": { ... game state fields ... }
+    }
+
+    2. Legacy internal format:
     {
         "type": "state",
         "data": { ... game state fields ... }
@@ -147,33 +160,74 @@ def parse_game_state_from_message(message: dict[str, Any]) -> GameState | None:
     Returns:
         GameState if message is a valid state message, None otherwise
     """
-    if message.get("type") != "state":
+    # Try CommunicationMod format first (has game_state at top level)
+    if "game_state" in message:
+        data = message.get("game_state", {})
+        # Use top-level in_game if present, otherwise check game_state
+        in_game = message.get("in_game", data.get("in_game", False))
+    # Fall back to legacy internal format
+    elif message.get("type") == "state":
+        data = message.get("data", {})
+        in_game = data.get("in_game", False)
+    else:
         return None
 
-    data = message.get("data", {})
     if not data:
         return None
 
-    # Parse deck cards
+    # Parse deck cards with error handling
     deck_data = data.get("deck", [])
-    deck = [
-        Card(**card) if isinstance(card, dict) else Card(name=str(card))
-        for card in deck_data
-    ]
+    deck: list[Card] = []
+    for i, card in enumerate(deck_data):
+        try:
+            if isinstance(card, dict):
+                deck.append(Card(**card))
+            else:
+                deck.append(Card(name=str(card)))
+        except ValidationError as e:
+            logger.warning(
+                "Failed to parse card at index %d: %s. Card data: %s",
+                i,
+                e,
+                card,
+            )
+            # Skip invalid card rather than failing entire state parse
 
-    # Parse relics
+    # Parse relics with error handling
     relics_data = data.get("relics", [])
-    relics = [
-        Relic(**relic) if isinstance(relic, dict) else Relic(name=str(relic))
-        for relic in relics_data
-    ]
+    relics: list[Relic] = []
+    for i, relic in enumerate(relics_data):
+        try:
+            if isinstance(relic, dict):
+                relics.append(Relic(**relic))
+            else:
+                relics.append(Relic(name=str(relic)))
+        except ValidationError as e:
+            logger.warning(
+                "Failed to parse relic at index %d: %s. Relic data: %s",
+                i,
+                e,
+                relic,
+            )
+            # Skip invalid relic rather than failing entire state parse
 
-    # Parse potions
+    # Parse potions with error handling
     potions_data = data.get("potions", [])
-    potions = [
-        Potion(**potion) if isinstance(potion, dict) else Potion(name=str(potion))
-        for potion in potions_data
-    ]
+    potions: list[Potion] = []
+    for i, potion in enumerate(potions_data):
+        try:
+            if isinstance(potion, dict):
+                potions.append(Potion(**potion))
+            else:
+                potions.append(Potion(name=str(potion)))
+        except ValidationError as e:
+            logger.warning(
+                "Failed to parse potion at index %d: %s. Potion data: %s",
+                i,
+                e,
+                potion,
+            )
+            # Skip invalid potion rather than failing entire state parse
 
     # Handle screen_state - CommunicationMod sometimes sends a string (e.g., "COMBAT")
     # instead of a dict. Normalize to dict format.
@@ -185,17 +239,23 @@ def parse_game_state_from_message(message: dict[str, Any]) -> GameState | None:
     else:
         screen_state = {}
 
+    # HP field: CommunicationMod uses "current_hp", legacy uses "hp"
+    hp = data.get("current_hp", data.get("hp", 0))
+
+    # Block field: CommunicationMod uses "block", legacy uses "current_block"
+    block = data.get("block", data.get("current_block", 0))
+
     return GameState(
-        in_game=data.get("in_game", False),
+        in_game=in_game,
         screen_type=data.get("screen_type", "NONE"),
         floor=data.get("floor", 0),
         act=data.get("act", 1),
         act_boss=data.get("act_boss"),
         seed=data.get("seed"),
-        hp=data.get("hp", 0),
+        hp=hp,
         max_hp=data.get("max_hp", 0),
         gold=data.get("gold", 0),
-        current_block=data.get("current_block", 0),
+        current_block=block,
         deck=deck,
         relics=relics,
         potions=potions,

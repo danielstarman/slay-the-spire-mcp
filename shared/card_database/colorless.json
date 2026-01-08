@@ -1,0 +1,285 @@
+{
+  "character": "Colorless",
+  "cards": [
+    {
+      "id": "apotheosis",
+      "name": "Apotheosis",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 2,
+      "description": "Upgrade ALL cards in your deck. Exhaust."
+    },
+    {
+      "id": "bandage_up",
+      "name": "Bandage Up",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 0,
+      "description": "Gain 4 Block. Heal 1 HP."
+    },
+    {
+      "id": "blind",
+      "name": "Blind",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Enemy loses 2 Strength. Lasts 2 turns. Exhaust."
+    },
+    {
+      "id": "chrysalis",
+      "name": "Chrysalis",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 2,
+      "description": "Gain 1 Strength. Gain 2 Block."
+    },
+    {
+      "id": "dark_shackles",
+      "name": "Dark Shackles",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Enemy loses 2 Strength. Lasts this turn. Exhaust."
+    },
+    {
+      "id": "deep_breath",
+      "name": "Deep Breath",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Add 2 Strikes to your hand. Draw 1 card."
+    },
+    {
+      "id": "discovery",
+      "name": "Discovery",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Choose 1 of 3 cards to add to your hand. It costs 0 this turn. Exhaust."
+    },
+    {
+      "id": "dramatic_entrance",
+      "name": "Dramatic Entrance",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 5,
+      "description": "Deal 8 damage. Add 2 Dazed to your hand."
+    },
+    {
+      "id": "enlightenment",
+      "name": "Enlightenment",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Gain 1 Temporary HP for each card in your hand. Exhaust."
+    },
+    {
+      "id": "finesse",
+      "name": "Finesse",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 0,
+      "description": "Draw 1 card. Gain 1 Block."
+    },
+    {
+      "id": "flash_of_steel",
+      "name": "Flash of Steel",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Deal 3 damage. Draw 1 card."
+    },
+    {
+      "id": "forethought",
+      "name": "Forethought",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Gain 4 Block. Attach an Ascender's Bane to this card."
+    },
+    {
+      "id": "good_instincts",
+      "name": "Good Instincts",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Gain 3 Block. Apply 1 Vulnerable to a random enemy."
+    },
+    {
+      "id": "hand_of_greed",
+      "name": "Hand of Greed",
+      "type": "Attack",
+      "rarity": "Rare",
+      "cost": 2,
+      "description": "Deal 4 damage. Gain 1 Gold for each card played this turn."
+    },
+    {
+      "id": "impatience",
+      "name": "Impatience",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Apply 1 Frail to a random enemy."
+    },
+    {
+      "id": "jack_of_all_trades",
+      "name": "Jack of All Trades",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Draw 1 card. Gain 1 Block. Gain 1 Gold. Apply 1 Weak to a random enemy."
+    },
+    {
+      "id": "madness",
+      "name": "Madness",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "This turn, whenever you play a card, play a copy of it. Exhaust."
+    },
+    {
+      "id": "magnetism",
+      "name": "Magnetism",
+      "type": "Power",
+      "rarity": "Rare",
+      "cost": 3,
+      "description": "Whenever a card is played, gain 1 Temporary HP."
+    },
+    {
+      "id": "master_of_strategy",
+      "name": "Master of Strategy",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "Draw 1 card. Gain 1 Block. Gain 1 Energy next turn."
+    },
+    {
+      "id": "mayhem",
+      "name": "Mayhem",
+      "type": "Power",
+      "rarity": "Rare",
+      "cost": 2,
+      "description": "Whenever you play a card, play it again automatically next turn. Ethereal."
+    },
+    {
+      "id": "metamorphosis",
+      "name": "Metamorphosis",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 2,
+      "description": "Exhaust all Wounds and Dazed in your deck. Heal 1 HP for each."
+    },
+    {
+      "id": "mind_blast",
+      "name": "Mind Blast",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 2,
+      "description": "Deal 12 damage. This card costs 1 more for each card in your hand."
+    },
+    {
+      "id": "panache",
+      "name": "Panache",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "This turn, whenever you play a card, gain 1 Block."
+    },
+    {
+      "id": "panic_button",
+      "name": "Panic Button",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Gain 6 Block. Shuffle a Curse into your draw pile."
+    },
+    {
+      "id": "panacea",
+      "name": "Panacea",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Remove a random Status card from your hand. Heal 4 HP."
+    },
+    {
+      "id": "purity",
+      "name": "Purity",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 2,
+      "description": "Add 2 Strikes and 2 Defends to your hand. Exhaust."
+    },
+    {
+      "id": "sadistic_nature",
+      "name": "Sadistic Nature",
+      "type": "Power",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "At the start of your turn, deal 5 damage to all enemies. Vulnerable."
+    },
+    {
+      "id": "secret_technique",
+      "name": "Secret Technique",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "Draw 3 cards. Discard 1 card."
+    },
+    {
+      "id": "secret_weapon",
+      "name": "Secret Weapon",
+      "type": "Attack",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "Deal 3 damage. Upgrade ALL cards in your hand."
+    },
+    {
+      "id": "swift_strike",
+      "name": "Swift Strike",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Deal 5 damage. Draw 1 card."
+    },
+    {
+      "id": "the_bomb",
+      "name": "The Bomb",
+      "type": "Attack",
+      "rarity": "Rare",
+      "cost": 3,
+      "description": "Deal 40 damage. Exhaust."
+    },
+    {
+      "id": "thinking_ahead",
+      "name": "Thinking Ahead",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "Add 1 random Skill to your hand. It costs 0 this turn. Exhaust."
+    },
+    {
+      "id": "transmutation",
+      "name": "Transmutation",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "Choose 1 of 3 cards to create a copy of and add to your hand. Exhaust."
+    },
+    {
+      "id": "trip",
+      "name": "Trip",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Apply 3 Weak and 1 Vulnerable to a random enemy. Exhaust."
+    },
+    {
+      "id": "violence",
+      "name": "Violence",
+      "type": "Power",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "This turn, whenever you play an Attack, gain 3 additional Strength."
+    }
+  ]
+}

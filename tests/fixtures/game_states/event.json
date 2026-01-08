@@ -1,20 +1,20 @@
 {
-  "available_commands": ["choose", "skip", "state", "potion"],
+  "available_commands": ["choose", "state", "potion"],
   "ready_for_command": true,
   "in_game": true,
   "game_state": {
-    "screen_type": "CARD_REWARD",
-    "screen_name": "Card Reward",
+    "screen_type": "EVENT",
+    "screen_name": "Event",
     "is_screen_up": true,
-    "room_phase": "COMPLETE",
-    "room_type": "MonsterRoom",
+    "room_phase": "EVENT",
+    "room_type": "EventRoom",
     "action_phase": "WAITING_ON_USER",
-    "floor": 5,
+    "floor": 4,
     "act": 1,
     "act_boss": "Slime Boss",
-    "current_hp": 65,
+    "current_hp": 72,
     "max_hp": 80,
-    "gold": 99,
+    "gold": 120,
     "block": 0,
     "deck": [
       {"id": "Strike_R", "uuid": "strike-1", "name": "Strike", "cost": 1, "type": "ATTACK", "upgrades": 0, "rarity": "BASIC", "exhausts": false, "ethereal": false},
@@ -36,16 +36,17 @@
       {"id": "Potion Slot", "name": "Potion Slot", "can_use": false, "can_discard": false, "requires_target": false},
       {"id": "Potion Slot", "name": "Potion Slot", "can_use": false, "can_discard": false, "requires_target": false}
     ],
-    "choice_list": ["Strike", "Pommel Strike", "Anger"],
     "screen_state": {
-      "cards": [
-        {"id": "Strike_R", "name": "Strike", "cost": 1, "type": "ATTACK", "upgrades": 0, "rarity": "COMMON", "exhausts": false, "ethereal": false},
-        {"id": "PommelStrike", "name": "Pommel Strike", "cost": 1, "type": "ATTACK", "upgrades": 0, "rarity": "COMMON", "exhausts": false, "ethereal": false},
-        {"id": "Anger", "name": "Anger", "cost": 0, "type": "ATTACK", "upgrades": 0, "rarity": "COMMON", "exhausts": false, "ethereal": false}
-      ],
-      "bowl_available": false,
-      "skip_available": true
+      "event_id": "Big Fish",
+      "event_name": "Big Fish",
+      "body_text": "You happen upon a large fish-like creature lying on the ground gasping for air. It's too big to carry, but...",
+      "options": [
+        {"label": "[Eat] Heal 5 HP.", "choice_index": 0, "disabled": false},
+        {"label": "[Feed] Obtain a Relic.", "choice_index": 1, "disabled": false},
+        {"label": "[Leave]", "choice_index": 2, "disabled": false}
+      ]
     },
+    "choice_list": ["Eat", "Feed", "Leave"],
     "seed": 123456789,
     "class": "IRONCLAD",
     "ascension_level": 0,

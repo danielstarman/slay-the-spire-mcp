@@ -1,18 +1,18 @@
 {
-  "available_commands": ["choose", "skip", "state", "potion"],
+  "available_commands": ["choose", "state", "potion"],
   "ready_for_command": true,
   "in_game": true,
   "game_state": {
-    "screen_type": "CARD_REWARD",
-    "screen_name": "Card Reward",
+    "screen_type": "MAP",
+    "screen_name": "Map",
     "is_screen_up": true,
-    "room_phase": "COMPLETE",
-    "room_type": "MonsterRoom",
+    "room_phase": "INCOMPLETE",
+    "room_type": "EmptyRoom",
     "action_phase": "WAITING_ON_USER",
-    "floor": 5,
+    "floor": 1,
     "act": 1,
     "act_boss": "Slime Boss",
-    "current_hp": 65,
+    "current_hp": 80,
     "max_hp": 80,
     "gold": 99,
     "block": 0,
@@ -36,19 +36,38 @@
       {"id": "Potion Slot", "name": "Potion Slot", "can_use": false, "can_discard": false, "requires_target": false},
       {"id": "Potion Slot", "name": "Potion Slot", "can_use": false, "can_discard": false, "requires_target": false}
     ],
-    "choice_list": ["Strike", "Pommel Strike", "Anger"],
     "screen_state": {
-      "cards": [
-        {"id": "Strike_R", "name": "Strike", "cost": 1, "type": "ATTACK", "upgrades": 0, "rarity": "COMMON", "exhausts": false, "ethereal": false},
-        {"id": "PommelStrike", "name": "Pommel Strike", "cost": 1, "type": "ATTACK", "upgrades": 0, "rarity": "COMMON", "exhausts": false, "ethereal": false},
-        {"id": "Anger", "name": "Anger", "cost": 0, "type": "ATTACK", "upgrades": 0, "rarity": "COMMON", "exhausts": false, "ethereal": false}
+      "current_node": {"x": 3, "y": 0},
+      "next_nodes": [
+        {"x": 2, "y": 1, "symbol": "M"},
+        {"x": 3, "y": 1, "symbol": "?"},
+        {"x": 4, "y": 1, "symbol": "M"}
       ],
-      "bowl_available": false,
-      "skip_available": true
+      "boss_available": false
     },
+    "choice_list": ["x=2 y=1", "x=3 y=1", "x=4 y=1"],
+    "map": [
+      [
+        {"x": 0, "y": 0, "symbol": "M", "children": [{"x": 0, "y": 1}], "parents": []},
+        {"x": 1, "y": 0, "symbol": "?", "children": [{"x": 1, "y": 1}], "parents": []},
+        {"x": 2, "y": 0, "symbol": "M", "children": [{"x": 2, "y": 1}], "parents": []},
+        {"x": 3, "y": 0, "symbol": "M", "children": [{"x": 2, "y": 1}, {"x": 3, "y": 1}, {"x": 4, "y": 1}], "parents": []},
+        {"x": 4, "y": 0, "symbol": "?", "children": [{"x": 4, "y": 1}], "parents": []},
+        {"x": 5, "y": 0, "symbol": "M", "children": [{"x": 5, "y": 1}], "parents": []},
+        {"x": 6, "y": 0, "symbol": "$", "children": [{"x": 6, "y": 1}], "parents": []}
+      ],
+      [
+        {"x": 0, "y": 1, "symbol": "?", "children": [{"x": 0, "y": 2}], "parents": [{"x": 0, "y": 0}]},
+        {"x": 1, "y": 1, "symbol": "M", "children": [{"x": 1, "y": 2}], "parents": [{"x": 1, "y": 0}]},
+        {"x": 2, "y": 1, "symbol": "M", "children": [{"x": 2, "y": 2}], "parents": [{"x": 2, "y": 0}, {"x": 3, "y": 0}]},
+        {"x": 3, "y": 1, "symbol": "?", "children": [{"x": 3, "y": 2}], "parents": [{"x": 3, "y": 0}]},
+        {"x": 4, "y": 1, "symbol": "M", "children": [{"x": 4, "y": 2}], "parents": [{"x": 3, "y": 0}, {"x": 4, "y": 0}]},
+        {"x": 5, "y": 1, "symbol": "E", "children": [{"x": 5, "y": 2}], "parents": [{"x": 5, "y": 0}]},
+        {"x": 6, "y": 1, "symbol": "M", "children": [{"x": 6, "y": 2}], "parents": [{"x": 6, "y": 0}]}
+      ]
+    ],
     "seed": 123456789,
     "class": "IRONCLAD",
-    "ascension_level": 0,
-    "map": null
+    "ascension_level": 0
   }
 }

@@ -69,8 +69,15 @@ class GameStateManager:
         for callback in self._state_callbacks:
             try:
                 callback(new_state)
-            except Exception:
-                logger.error("Error in state callback", exc_info=True)
+            except Exception as e:
+                # Log with callback identity for debugging, but don't crash the state update
+                callback_name = getattr(callback, "__name__", repr(callback))
+                logger.error(
+                    "Error in state callback '%s': %s",
+                    callback_name,
+                    e,
+                    exc_info=True,
+                )
 
     def update_state_sync(self, new_state: GameState) -> None:
         """Synchronously update the current game state.
@@ -87,8 +94,15 @@ class GameStateManager:
         for callback in self._state_callbacks:
             try:
                 callback(new_state)
-            except Exception:
-                logger.error("Error in state callback", exc_info=True)
+            except Exception as e:
+                # Log with callback identity for debugging, but don't crash the state update
+                callback_name = getattr(callback, "__name__", repr(callback))
+                logger.error(
+                    "Error in state callback '%s': %s",
+                    callback_name,
+                    e,
+                    exc_info=True,
+                )
 
     def on_state_change(self, callback: Callable[[GameState], None]) -> None:
         """Register a callback for state changes.
@@ -309,15 +323,23 @@ class TCPListener:
 
         except ConnectionResetError:
             logger.warning(f"Connection reset by bridge at {addr}")
-        except Exception:
-            logger.error("Error handling bridge connection", exc_info=True)
+        except asyncio.CancelledError:
+            logger.info(f"Client handler cancelled for {addr}")
+        except OSError as e:
+            logger.error(f"I/O error handling bridge connection from {addr}: {e}")
+        except Exception as e:
+            logger.error(
+                f"Unexpected error handling bridge connection from {addr}: {e}",
+                exc_info=True,
+            )
         finally:
             # Clear stored writer on disconnect
             async with self._writer_lock:
                 if self._client_writer is writer:
                     self._client_writer = None
             writer.close()
-            with contextlib.suppress(Exception):
+            # Suppress only expected exceptions during close (broken pipe, etc.)
+            with contextlib.suppress(OSError, asyncio.CancelledError):
                 await writer.wait_closed()
 
     async def _process_line(self, line: str) -> None:
@@ -329,12 +351,26 @@ class TCPListener:
         try:
             message: dict[str, Any] = json.loads(line)
         except json.JSONDecodeError as e:
-            logger.error(f"Invalid JSON from bridge: {e}")
-            logger.debug(f"Invalid line was: {line[:100]}...")
+            # Log with enough context to diagnose, truncate very long lines
+            truncated = line[:200] + "..." if len(line) > 200 else line
+            logger.error(
+                f"Invalid JSON from bridge at position {e.pos}: {e.msg}. "
+                f"Line (truncated): {truncated}"
+            )
             return
 
         # Parse game state from message
-        game_state = parse_game_state_from_message(message)
+        try:
+            game_state = parse_game_state_from_message(message)
+        except Exception as e:
+            # Catch any unexpected parsing errors to prevent crash
+            logger.error(
+                f"Error parsing game state from message: {e}. "
+                f"Message type: {message.get('type', 'unknown')}",
+                exc_info=True,
+            )
+            return
+
         if game_state is not None:
             await self._state_manager.update_state(game_state)
             logger.debug(
@@ -342,6 +378,6 @@ class TCPListener:
                 f"screen={game_state.screen_type}"
             )
         else:
-            logger.warning(
-                f"Received non-state message: {message.get('type', 'unknown')}"
-            )
+            # Not necessarily an error - could be a non-state message type
+            msg_type = message.get("type", message.get("message_type", "unknown"))
+            logger.debug(f"Received non-state message type: {msg_type}")

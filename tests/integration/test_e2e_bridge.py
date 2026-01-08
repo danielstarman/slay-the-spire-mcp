@@ -10,6 +10,7 @@ Tests the full pipeline:
 from __future__ import annotations
 
 import asyncio
+import copy
 import json
 from io import StringIO
 from pathlib import Path
@@ -46,7 +47,14 @@ def card_reward_state_json(game_states_dir: Path) -> dict[str, Any]:
 
 
 def wrap_as_state_message(data: dict[str, Any]) -> dict[str, Any]:
-    """Wrap game state data in the expected message format."""
+    """Wrap game state data in the expected message format.
+
+    If the data is already in CommunicationMod format (has game_state),
+    return it as-is. Otherwise wrap in legacy format.
+    """
+    if "game_state" in data:
+        # Already in CommunicationMod format
+        return data
     return {"type": "state", "data": data}
 
 
@@ -579,9 +587,13 @@ class TestBidirectionalFlow:
             command1 = {"type": "command", "action": "PLAY", "card_index": 1}
             await listener.send_command(command1)
 
-            # Send another state
-            modified_state = combat_state_json.copy()
-            modified_state["floor"] = 4
+            # Send another state with different floor
+            # Use deep copy since fixture has nested game_state
+            modified_state = copy.deepcopy(combat_state_json)
+            if "game_state" in modified_state:
+                modified_state["game_state"]["floor"] = 4
+            else:
+                modified_state["floor"] = 4
             message2 = wrap_as_state_message(modified_state)
             await relay.send_to_server(json.dumps(message2))
 

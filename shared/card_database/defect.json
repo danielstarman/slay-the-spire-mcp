@@ -1,0 +1,669 @@
+{
+  "character": "Defect",
+  "cards": [
+    {
+      "id": "strike_b",
+      "name": "Strike",
+      "type": "Attack",
+      "rarity": "Starter",
+      "cost": 1,
+      "description": "Deal 6 damage."
+    },
+    {
+      "id": "defend_b",
+      "name": "Defend",
+      "type": "Skill",
+      "rarity": "Starter",
+      "cost": 1,
+      "description": "Gain 7 block."
+    },
+    {
+      "id": "zap",
+      "name": "Zap",
+      "type": "Attack",
+      "rarity": "Starter",
+      "cost": 1,
+      "description": "Deal 3 damage. Channel 1 Lightning."
+    },
+    {
+      "id": "dualcast",
+      "name": "Dualcast",
+      "type": "Skill",
+      "rarity": "Starter",
+      "cost": 1,
+      "description": "Channel 1 Lightning twice."
+    },
+    {
+      "id": "ball_lightning",
+      "name": "Ball Lightning",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Deal 3 damage. Channel 1 Lightning."
+    },
+    {
+      "id": "barrage",
+      "name": "Barrage",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Deal 3 damage times the number of channeled Orbs."
+    },
+    {
+      "id": "bludgeon",
+      "name": "Bludgeon",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 3,
+      "description": "Deal 32 damage."
+    },
+    {
+      "id": "bootstrap",
+      "name": "Bootstrap",
+      "type": "Skill",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Gain 5 block. This card costs 0 if you have 0 Block."
+    },
+    {
+      "id": "cold_snap",
+      "name": "Cold Snap",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Deal 3 damage. Channel 1 Frost."
+    },
+    {
+      "id": "coolheaded",
+      "name": "Coolheaded",
+      "type": "Skill",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Gain 7 block. Channel 1 Frost."
+    },
+    {
+      "id": "compile_driver",
+      "name": "Compile Driver",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Deal 5 damage. Create a random Orb. Channel 1 Plasma."
+    },
+    {
+      "id": "core_surge",
+      "name": "Core Surge",
+      "type": "Skill",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Hyperbeam. Passive gain 1 Strength. Requires a Plasma Orb to be Passive."
+    },
+    {
+      "id": "dark_impulse",
+      "name": "Dark Impulse",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Deal 6 damage. Channel 1 Dark."
+    },
+    {
+      "id": "dazzling_blow",
+      "name": "Dazzling Blow",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 2,
+      "description": "Deal 8 damage. Channel 1 Lightning."
+    },
+    {
+      "id": "deflect",
+      "name": "Deflect",
+      "type": "Skill",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Gain 4 block."
+    },
+    {
+      "id": "discharge",
+      "name": "Discharge",
+      "type": "Skill",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Hyperbeam. Channel 1 Lightning."
+    },
+    {
+      "id": "equilibrium",
+      "name": "Equilibrium",
+      "type": "Skill",
+      "rarity": "Common",
+      "cost": 2,
+      "description": "Channel 1 Lightning, Frost, and Dark."
+    },
+    {
+      "id": "examine",
+      "name": "Examine",
+      "type": "Skill",
+      "rarity": "Common",
+      "cost": 0,
+      "description": "Draw 1 card. Channel 1 Frost."
+    },
+    {
+      "id": "go_for_the_eyes",
+      "name": "Go for the Eyes",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Deal 4 damage. Apply 1 weak."
+    },
+    {
+      "id": "hologram",
+      "name": "Hologram",
+      "type": "Skill",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Gain 5 block. Channel 1 Plasma."
+    },
+    {
+      "id": "pummel",
+      "name": "Pummel",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Deal 4 damage 2 times."
+    },
+    {
+      "id": "recursion",
+      "name": "Recursion",
+      "type": "Skill",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Channel 1 of each type of Orb."
+    },
+    {
+      "id": "reprogram",
+      "name": "Reprogram",
+      "type": "Skill",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Channel 1 Plasma. Lose 6 HP."
+    },
+    {
+      "id": "siphon_soul",
+      "name": "Siphon Soul",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 3,
+      "description": "Deal 10 damage. Channel 1 Dark. Heal 3 HP."
+    },
+    {
+      "id": "static_discharge",
+      "name": "Static Discharge",
+      "type": "Skill",
+      "rarity": "Common",
+      "cost": 0,
+      "description": "Deal 4 damage to a random enemy. Channel 1 Lightning."
+    },
+    {
+      "id": "storm",
+      "name": "Storm",
+      "type": "Skill",
+      "rarity": "Common",
+      "cost": 1,
+      "description": "Channel 1 Lightning. Whenever you play a card, you may Channel 1 Lightning."
+    },
+    {
+      "id": "sweeping_beam",
+      "name": "Sweeping Beam",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 2,
+      "description": "Deal 9 damage. Channel 1 Dark."
+    },
+    {
+      "id": "twin_strike",
+      "name": "Twin Strike",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 2,
+      "description": "Deal 5 damage twice."
+    },
+    {
+      "id": "overheat",
+      "name": "Overheat",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Deal 8 damage. Discard 1 card."
+    },
+    {
+      "id": "autocannon",
+      "name": "Autocannon",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Deal 2 damage to all enemies and Channel 1 Lightning 2 times."
+    },
+    {
+      "id": "biased_cognition",
+      "name": "Biased Cognition",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Gain 2 block. Apply 2 weak. Channel 1 Frost. Exhaust."
+    },
+    {
+      "id": "breaching_blow",
+      "name": "Breaching Blow",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 3,
+      "description": "Deal 15 damage and Channel 1 Dark. This card costs 1 less for each card you have discarded this turn."
+    },
+    {
+      "id": "buffer",
+      "name": "Buffer",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Add 1 Strength to your Strength orbs. Create a Strength orb."
+    },
+    {
+      "id": "capacitor",
+      "name": "Capacitor",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 2,
+      "description": "Channel 2 Lightning."
+    },
+    {
+      "id": "chaos",
+      "name": "Chaos",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 0,
+      "description": "Channel 1 random Orb. Exhaust."
+    },
+    {
+      "id": "chill",
+      "name": "Chill",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 0,
+      "description": "Gain 5 block. Channel 1 Frost."
+    },
+    {
+      "id": "concentrate",
+      "name": "Concentrate",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Channel a Passive Orb as Active, and an Active Orb as Passive."
+    },
+    {
+      "id": "double_tap",
+      "name": "Double Tap",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "This turn, your next Attack is played twice."
+    },
+    {
+      "id": "echo_form",
+      "name": "Echo Form",
+      "type": "Power",
+      "rarity": "Uncommon",
+      "cost": 3,
+      "description": "This turn, your next Attack is played twice. At the end of your turn, exhaust this card instead of discarding it."
+    },
+    {
+      "id": "fission",
+      "name": "Fission",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Split all Orbs. Heal 3 HP."
+    },
+    {
+      "id": "genetic_algorithm",
+      "name": "Genetic Algorithm",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 2,
+      "description": "Add 1 Strength to your Strength orbs. Double your current Strength."
+    },
+    {
+      "id": "glacier",
+      "name": "Glacier",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 2,
+      "description": "Gain 7 block. Channel 1 Frost."
+    },
+    {
+      "id": "hydro_pump",
+      "name": "Hydro Pump",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 2,
+      "description": "Deal 9 damage. Channel 1 Frost. Gain 6 block."
+    },
+    {
+      "id": "leap",
+      "name": "Leap",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Gain 15 block. This card costs 3 less if you have a Plasma Orb."
+    },
+    {
+      "id": "machine_learning",
+      "name": "Machine Learning",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Create a copy of a random Orb. Exhaust."
+    },
+    {
+      "id": "masterful_block",
+      "name": "Masterful Block",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 2,
+      "description": "Gain 10 block. Channel 1 of a random Orb."
+    },
+    {
+      "id": "melange",
+      "name": "Melange",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 2,
+      "description": "Gain 3 Strength. Channel 1 Frost. Create a random Orb."
+    },
+    {
+      "id": "multi_cast",
+      "name": "Multi-Cast",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 2,
+      "description": "Channel 1 Lightning 3 times."
+    },
+    {
+      "id": "overclock",
+      "name": "Overclock",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Channel 1 Plasma. Gain 1 Strength. Lose 3 HP."
+    },
+    {
+      "id": "passive_defense",
+      "name": "Passive Defense",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 2,
+      "description": "Add 1 block to your Frost orbs. Create a Frost orb."
+    },
+    {
+      "id": "prepare",
+      "name": "Prepare",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 0,
+      "description": "Create a random Orb. Exhaust."
+    },
+    {
+      "id": "recur",
+      "name": "Recur",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Add 1 block to all Orbs."
+    },
+    {
+      "id": "reinforced_body",
+      "name": "Reinforced Body",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Gain 4 block. This card costs 1 less for each Strength you have."
+    },
+    {
+      "id": "rupture",
+      "name": "Rupture",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 3,
+      "description": "Deal 20 damage. Apply 1 Frail. Gain 1 Strength."
+    },
+    {
+      "id": "scrape",
+      "name": "Scrape",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Channel 1 Frost, and 1 Dark."
+    },
+    {
+      "id": "self_repair",
+      "name": "Self Repair",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 2,
+      "description": "Gain 8 block. Heal 3 HP."
+    },
+    {
+      "id": "sting",
+      "name": "Sting",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Deal 7 damage. Channel 1 Frost."
+    },
+    {
+      "id": "storm_strike",
+      "name": "Storm Strike",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 2,
+      "description": "Deal 7 damage. Channel 1 Lightning twice."
+    },
+    {
+      "id": "thunder_strike",
+      "name": "Thunder Strike",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 2,
+      "description": "Deal 4 damage to all enemies. Channel 1 Lightning 3 times."
+    },
+    {
+      "id": "turbo",
+      "name": "Turbo",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 0,
+      "description": "Gain 7 block. Channel 1 Plasma. Exhaust."
+    },
+    {
+      "id": "white_noise",
+      "name": "White Noise",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Shuffle a random Orb into your hand."
+    },
+    {
+      "id": "wind_strike",
+      "name": "Wind Strike",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "description": "Deal 5 damage. Apply 1 Vulnerable."
+    },
+    {
+      "id": "bitch_slap",
+      "name": "Bitch Slap",
+      "type": "Attack",
+      "rarity": "Rare",
+      "cost": 3,
+      "description": "Deal 8 damage, 4 times. Vulnerable enemies take 50% more."
+    },
+    {
+      "id": "blizzard",
+      "name": "Blizzard",
+      "type": "Attack",
+      "rarity": "Rare",
+      "cost": 3,
+      "description": "Channel 2 Frost. Channel 2 Frost again. Exhaust."
+    },
+    {
+      "id": "bundle",
+      "name": "Bundle",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 2,
+      "description": "Create 3 random Orbs. Exhaust."
+    },
+    {
+      "id": "cheat_code",
+      "name": "Cheat Code",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 2,
+      "description": "Create a Plasma orb. Gain 1 Strength and Channel 1 Plasma."
+    },
+    {
+      "id": "cold_embrace",
+      "name": "Cold Embrace",
+      "type": "Power",
+      "rarity": "Rare",
+      "cost": 2,
+      "description": "Whenever you channel a Frost, gain 2 block."
+    },
+    {
+      "id": "consume",
+      "name": "Consume",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 2,
+      "description": "Add 1 Strength to your Strength orbs. Destroy a random Orb."
+    },
+    {
+      "id": "cryo_beam",
+      "name": "Cryo Beam",
+      "type": "Attack",
+      "rarity": "Rare",
+      "cost": 3,
+      "description": "Deal 10 damage. Channel 1 Frost. Freeze a random enemy."
+    },
+    {
+      "id": "dark_shard",
+      "name": "Dark Shard",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "Add 1 damage to your Dark orbs. Create a Dark orb."
+    },
+    {
+      "id": "defragment",
+      "name": "Defragment",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "Add 1 block to all of your Orbs. Gain 2 block."
+    },
+    {
+      "id": "divinity",
+      "name": "Divinity",
+      "type": "Power",
+      "rarity": "Rare",
+      "cost": 3,
+      "description": "Whenever you channel an Orb, gain 2 strength."
+    },
+    {
+      "id": "force_field",
+      "name": "Force Field",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 3,
+      "description": "Gain block equal to the total amount of Orbs."
+    },
+    {
+      "id": "gash",
+      "name": "Gash",
+      "type": "Attack",
+      "rarity": "Rare",
+      "cost": 2,
+      "description": "Deal 7 damage. Apply 2 weak. Channel 1 Dark."
+    },
+    {
+      "id": "hello_world",
+      "name": "Hello World",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "Create 2 random Orbs. Exhaust."
+    },
+    {
+      "id": "hyperbeam",
+      "name": "Hyperbeam",
+      "type": "Attack",
+      "rarity": "Rare",
+      "cost": 2,
+      "description": "Deal 20 damage and Channel 1 Lightning. You can't play any more cards this turn."
+    },
+    {
+      "id": "metallicize",
+      "name": "Metallicize",
+      "type": "Power",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "Whenever you discard a card, gain 2 block."
+    },
+    {
+      "id": "pile_on",
+      "name": "Pile On",
+      "type": "Attack",
+      "rarity": "Rare",
+      "cost": 2,
+      "description": "Deal 5 damage plus 2 for each attack you played before this. Channel 1 Dark."
+    },
+    {
+      "id": "reboot",
+      "name": "Reboot",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 2,
+      "description": "Discard 1 card. Gain 4 block. Remove all Orbs."
+    },
+    {
+      "id": "searing_blow",
+      "name": "Searing Blow",
+      "type": "Attack",
+      "rarity": "Rare",
+      "cost": 2,
+      "description": "Deal 12 damage. This card can be upgraded. Channel 1 Dark."
+    },
+    {
+      "id": "steroid",
+      "name": "Steroid",
+      "type": "Power",
+      "rarity": "Rare",
+      "cost": 1,
+      "description": "This turn, your next card is played twice. Exhaust."
+    },
+    {
+      "id": "storm_of_steel",
+      "name": "Storm of Steel",
+      "type": "Attack",
+      "rarity": "Rare",
+      "cost": 2,
+      "description": "Gain 5 block for each card in your hand. Channel 1 Lightning."
+    },
+    {
+      "id": "vent",
+      "name": "Vent",
+      "type": "Skill",
+      "rarity": "Rare",
+      "cost": 0,
+      "description": "Gain 2 block for every orb. Channel 1 random Orb. Exhaust."
+    }
+  ]
+}
