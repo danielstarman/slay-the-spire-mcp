@@ -12,6 +12,9 @@ import com.megacrit.cardcrawl.core.Settings;
 import com.megacrit.cardcrawl.dungeons.AbstractDungeon;
 import com.megacrit.cardcrawl.helpers.FontHelper;
 import com.megacrit.cardcrawl.helpers.ImageMaster;
+import spirebridge.overlay.OverlayManager;
+import spirebridge.overlay.OverlayRenderer;
+import spirebridge.overlay.OverlayToggleButton;
 import spirebridge.patches.InputActionPatch;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -46,9 +49,14 @@ public class SpireBridge implements PostInitializeSubscriber, PostUpdateSubscrib
     // WebSocket server for overlay communication
     private static WebSocketServer webSocketServer;
     private static final String WEBSOCKET_PORT_OPTION = "websocketPort";
+
+    // Overlay renderer for drawing Claude's recommendations
+    private static OverlayRenderer overlayRenderer;
     private static final String WEBSOCKET_ENABLED_OPTION = "websocketEnabled";
+    private static final String OVERLAY_ENABLED_OPTION = "overlayEnabled";
     private static final int DEFAULT_WEBSOCKET_PORT = WebSocketServer.DEFAULT_PORT;
     private static final boolean DEFAULT_WEBSOCKET_ENABLED = true;
+    private static final boolean DEFAULT_OVERLAY_ENABLED = true;
 
     private static SpireConfig communicationConfig;
     private static final String COMMAND_OPTION = "command";
@@ -64,6 +72,10 @@ public class SpireBridge implements PostInitializeSubscriber, PostUpdateSubscrib
         onStateChangeSubscribers = new ArrayList<>();
         SpireBridge.subscribe(this);
         readQueue = new LinkedBlockingQueue<>();
+
+        // Initialize and register the overlay renderer
+        overlayRenderer = new OverlayRenderer();
+        BaseMod.subscribe(overlayRenderer);
         try {
             Properties defaults = new Properties();
             defaults.put(GAME_START_OPTION, Boolean.toString(false));
@@ -71,6 +83,7 @@ public class SpireBridge implements PostInitializeSubscriber, PostUpdateSubscrib
             defaults.put(VERBOSE_OPTION, Boolean.toString(DEFAULT_VERBOSITY));
             defaults.put(WEBSOCKET_PORT_OPTION, Integer.toString(DEFAULT_WEBSOCKET_PORT));
             defaults.put(WEBSOCKET_ENABLED_OPTION, Boolean.toString(DEFAULT_WEBSOCKET_ENABLED));
+            defaults.put(OVERLAY_ENABLED_OPTION, Boolean.toString(DEFAULT_OVERLAY_ENABLED));
             communicationConfig = new SpireConfig("SpireBridge", "config", defaults);
             String command = communicationConfig.getString(COMMAND_OPTION);
             // I want this to always be saved to the file so people can set it more easily.
@@ -91,6 +104,9 @@ public class SpireBridge implements PostInitializeSubscriber, PostUpdateSubscrib
         if(getWebSocketEnabledOption()) {
             startWebSocketServer();
         }
+
+        // Initialize overlay enabled state from config
+        OverlayManager.getInstance().setEnabled(getOverlayEnabledOption());
     }
 
     public static void initialize() {
@@ -141,6 +157,8 @@ public class SpireBridge implements PostInitializeSubscriber, PostUpdateSubscrib
 
     public void receivePostInitialize() {
         setUpOptionsMenu();
+        // Register the overlay toggle button for in-game control
+        OverlayToggleButton.getInstance().register();
     }
 
     public void receivePostUpdate() {
@@ -270,6 +288,25 @@ public class SpireBridge implements PostInitializeSubscriber, PostUpdateSubscrib
                 });
         settingsPanel.addUIElement(websocketStatusLabel);
 
+        // Overlay visibility toggle
+        ModLabeledToggleButton overlayEnabledOption = new ModLabeledToggleButton(
+                "Show Claude's overlay recommendations",
+                350, 350, Settings.CREAM_COLOR, FontHelper.charDescFont,
+                getOverlayEnabledOption(), settingsPanel, modLabel -> {},
+                modToggleButton -> {
+                    if (communicationConfig != null) {
+                        communicationConfig.setBool(OVERLAY_ENABLED_OPTION, modToggleButton.enabled);
+                        try {
+                            communicationConfig.save();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        // Update OverlayManager state
+                        OverlayManager.getInstance().setEnabled(modToggleButton.enabled);
+                    }
+                });
+        settingsPanel.addUIElement(overlayEnabledOption);
+
         BaseMod.registerModBadge(ImageMaster.loadImage("Icon.png"), MODNAME, AUTHOR, DESCRIPTION, settingsPanel);
     }
 
@@ -292,6 +329,12 @@ public class SpireBridge implements PostInitializeSubscriber, PostUpdateSubscrib
             listener.destroy();
         }
         stopWebSocketServer();
+
+        // Clean up overlay renderer
+        if (overlayRenderer != null) {
+            overlayRenderer.dispose();
+            overlayRenderer = null;
+        }
     }
 
     private static void sendMessage(String message) {
@@ -367,6 +410,13 @@ public class SpireBridge implements PostInitializeSubscriber, PostUpdateSubscrib
             return DEFAULT_WEBSOCKET_ENABLED;
         }
         return communicationConfig.getBool(WEBSOCKET_ENABLED_OPTION);
+    }
+
+    private static boolean getOverlayEnabledOption() {
+        if (communicationConfig == null) {
+            return DEFAULT_OVERLAY_ENABLED;
+        }
+        return communicationConfig.getBool(OVERLAY_ENABLED_OPTION);
     }
 
     /**
