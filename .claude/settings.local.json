@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uv sync:*)",
+      "Bash(uv run python -m pytest:*)",
+      "Bash(uv run python -m mypy:*)",
+      "Bash(uv run ruff:*)",
+      "Bash(uv run python:*)",
+      "Bash(done)",
+      "Bash(claude mcp add:*)"
+    ]
+  },
+  "outputStyle": "Explanatory"
+}
