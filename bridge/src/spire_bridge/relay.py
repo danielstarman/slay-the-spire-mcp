@@ -271,6 +271,59 @@ class Relay:
             self._reader = None
             logger.info("Connection closed")
 
+    async def _handle_stdin_with_retry(self, stdin: AsyncLineReader) -> None:
+        """Handle stdin reading with EOF retry logic.
+
+        Reads from stdin in a loop, retrying on EOF up to max_stdin_eof_retries times.
+        Resets retry counter on successful reads. Sends received data to TCP server.
+
+        Args:
+            stdin: The async stdin stream reader
+
+        Raises:
+            StopAsyncIteration: When EOF persists after max retries (signals shutdown)
+        """
+        stdin_eof_retries = 0
+
+        while True:
+            line_bytes = await stdin.readline()
+            if not line_bytes:
+                # EOF on stdin - could be transient or permanent
+                stdin_eof_retries += 1
+
+                if stdin_eof_retries > self.max_stdin_eof_retries:
+                    logger.info(
+                        "EOF on stdin persisted after %d retries, shutting down",
+                        self.max_stdin_eof_retries
+                    )
+                    raise StopAsyncIteration
+
+                logger.warning(
+                    "EOF on stdin (attempt %d/%d), retrying after %.1fs",
+                    stdin_eof_retries,
+                    self.max_stdin_eof_retries,
+                    self.stdin_eof_retry_delay
+                )
+
+                # Wait before retry
+                await asyncio.sleep(self.stdin_eof_retry_delay)
+
+                # If this is a ThreadedStdinReader, try to restart it
+                if isinstance(stdin, ThreadedStdinReader):
+                    if not stdin.is_running():
+                        stdin.restart()
+                    else:
+                        logger.warning("ThreadedStdinReader still running, cannot restart")
+
+                # Continue to retry readline
+                continue
+
+            # Successfully read data - reset retry counter
+            stdin_eof_retries = 0
+
+            line = line_bytes.decode("utf-8")
+            await self.send_to_server(line)
+
     async def run_tcp_to_stdout(self) -> None:
         """Run the TCP to stdout relay.
 
@@ -318,47 +371,11 @@ class Relay:
             logger.error("Initial connection failed after retries, exiting")
             return
 
-        stdin_eof_retries = 0
-
         try:
-            while True:
-                line_bytes = await stdin.readline()
-                if not line_bytes:
-                    # EOF on stdin - could be transient or permanent
-                    stdin_eof_retries += 1
-
-                    if stdin_eof_retries > self.max_stdin_eof_retries:
-                        logger.info(
-                            "EOF on stdin persisted after %d retries, shutting down",
-                            self.max_stdin_eof_retries
-                        )
-                        break
-
-                    logger.warning(
-                        "EOF on stdin (attempt %d/%d), retrying after %.1fs",
-                        stdin_eof_retries,
-                        self.max_stdin_eof_retries,
-                        self.stdin_eof_retry_delay
-                    )
-
-                    # Wait before retry
-                    await asyncio.sleep(self.stdin_eof_retry_delay)
-
-                    # If this is a ThreadedStdinReader, try to restart it
-                    if isinstance(stdin, ThreadedStdinReader):
-                        if not stdin.is_running():
-                            stdin.restart()
-                        else:
-                            logger.warning("ThreadedStdinReader still running, cannot restart")
-
-                    # Continue to retry readline
-                    continue
-
-                # Successfully read data - reset retry counter
-                stdin_eof_retries = 0
-
-                line = line_bytes.decode("utf-8")
-                await self.send_to_server(line)
+            await self._handle_stdin_with_retry(stdin)
+        except StopAsyncIteration:
+            # EOF persisted after retries, exit gracefully
+            pass
         except asyncio.CancelledError:
             logger.info("Relay cancelled")
         finally:
@@ -383,47 +400,11 @@ class Relay:
         # Start TCP to stdout relay in background
         tcp_to_stdout_task = asyncio.create_task(self.run_tcp_to_stdout())
 
-        stdin_eof_retries = 0
-
         try:
-            while True:
-                line_bytes = await stdin.readline()
-                if not line_bytes:
-                    # EOF on stdin - could be transient or permanent
-                    stdin_eof_retries += 1
-
-                    if stdin_eof_retries > self.max_stdin_eof_retries:
-                        logger.info(
-                            "EOF on stdin persisted after %d retries, shutting down",
-                            self.max_stdin_eof_retries
-                        )
-                        break
-
-                    logger.warning(
-                        "EOF on stdin (attempt %d/%d), retrying after %.1fs",
-                        stdin_eof_retries,
-                        self.max_stdin_eof_retries,
-                        self.stdin_eof_retry_delay
-                    )
-
-                    # Wait before retry
-                    await asyncio.sleep(self.stdin_eof_retry_delay)
-
-                    # If this is a ThreadedStdinReader, try to restart it
-                    if isinstance(stdin, ThreadedStdinReader):
-                        if not stdin.is_running():
-                            stdin.restart()
-                        else:
-                            logger.warning("ThreadedStdinReader still running, cannot restart")
-
-                    # Continue to retry readline
-                    continue
-
-                # Successfully read data - reset retry counter
-                stdin_eof_retries = 0
-
-                line = line_bytes.decode("utf-8")
-                await self.send_to_server(line)
+            await self._handle_stdin_with_retry(stdin)
+        except StopAsyncIteration:
+            # EOF persisted after retries, exit gracefully
+            pass
         except asyncio.CancelledError:
             logger.info("Relay cancelled")
         finally:
