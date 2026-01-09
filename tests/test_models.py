@@ -518,6 +518,44 @@ class TestParseGameStateFromMessage:
         assert state is not None
         assert state.in_game is False
 
+    def test_parse_map_state_includes_map_data(self, game_states_dir: Path) -> None:
+        """Parse map state fixture includes parsed map."""
+        fixture_path = game_states_dir / "map.json"
+        with open(fixture_path) as f:
+            message = json.load(f)
+
+        state = parse_game_state_from_message(message)
+
+        assert state is not None
+        assert state.map is not None
+        assert len(state.map) == 2  # Two rows in fixture
+        assert len(state.map[0]) == 7  # First row has 7 nodes
+
+    def test_parse_map_children_as_tuples(self, game_states_dir: Path) -> None:
+        """Map children are transformed from dicts to tuples."""
+        fixture_path = game_states_dir / "map.json"
+        with open(fixture_path) as f:
+            message = json.load(f)
+
+        state = parse_game_state_from_message(message)
+
+        assert state is not None
+        assert state.map is not None
+        # Node at x=3, y=0 has children [(2,1), (3,1), (4,1)] per fixture
+        node = state.map[0][3]
+        assert node.children == [(2, 1), (3, 1), (4, 1)]
+
+    def test_parse_map_current_node(self, game_states_dir: Path) -> None:
+        """current_node is extracted from screen_state."""
+        fixture_path = game_states_dir / "map.json"
+        with open(fixture_path) as f:
+            message = json.load(f)
+
+        state = parse_game_state_from_message(message)
+
+        assert state is not None
+        assert state.current_node == (3, 0)
+
 
 class TestParseGameStateWithFixtures:
     """Tests using the JSON fixture files."""

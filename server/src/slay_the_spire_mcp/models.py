@@ -257,6 +257,70 @@ def parse_game_state_from_message(message: dict[str, Any]) -> GameState | None:
     # Block field: CommunicationMod uses "block", legacy uses "current_block"
     block = data.get("block", data.get("current_block", 0))
 
+    # Parse map data with error handling
+    # CommunicationMod sends map as a 2D array where children are dicts like {"x": 0, "y": 1}
+    # We need to transform them to tuples (0, 1) for the MapNode model
+    map_data = data.get("map")
+    parsed_map: list[list[MapNode]] | None = None
+    if map_data and isinstance(map_data, list):
+        parsed_map = []
+        for row_idx, row in enumerate(map_data):
+            if not isinstance(row, list):
+                logger.warning(
+                    "Invalid map row at index %d: expected list, got %s",
+                    row_idx,
+                    type(row).__name__,
+                )
+                continue
+            parsed_row: list[MapNode] = []
+            for node_idx, node in enumerate(row):
+                try:
+                    if isinstance(node, dict):
+                        # Transform children from [{"x": 0, "y": 1}] to [(0, 1)]
+                        raw_children = node.get("children", [])
+                        children: list[tuple[int, int]] = []
+                        for child in raw_children:
+                            if isinstance(child, dict) and "x" in child and "y" in child:
+                                children.append((child["x"], child["y"]))
+                        parsed_row.append(
+                            MapNode(
+                                x=node.get("x", 0),
+                                y=node.get("y", 0),
+                                symbol=node.get("symbol", "?"),
+                                children=children,
+                            )
+                        )
+                    else:
+                        logger.warning(
+                            "Invalid map node at row %d, index %d: expected dict, got %s",
+                            row_idx,
+                            node_idx,
+                            type(node).__name__,
+                        )
+                except ValidationError as e:
+                    logger.warning(
+                        "Failed to parse map node at row %d, index %d: %s. Node data: %s",
+                        row_idx,
+                        node_idx,
+                        e,
+                        node,
+                    )
+            parsed_map.append(parsed_row)
+
+    # Parse current_node from screen_state
+    # CommunicationMod sends it as {"x": 3, "y": 0}, we need tuple (3, 0)
+    current_node: tuple[int, int] | None = None
+    raw_current_node = screen_state.get("current_node")
+    if isinstance(raw_current_node, dict) and "x" in raw_current_node and "y" in raw_current_node:
+        try:
+            current_node = (raw_current_node["x"], raw_current_node["y"])
+        except (TypeError, KeyError) as e:
+            logger.warning(
+                "Failed to parse current_node: %s. Data: %s",
+                e,
+                raw_current_node,
+            )
+
     return GameState(
         in_game=in_game,
         screen_type=data.get("screen_type", "NONE"),
@@ -273,4 +337,6 @@ def parse_game_state_from_message(message: dict[str, Any]) -> GameState | None:
         potions=potions,
         choice_list=data.get("choice_list", []),
         screen_state=screen_state,
+        map=parsed_map,
+        current_node=current_node,
     )

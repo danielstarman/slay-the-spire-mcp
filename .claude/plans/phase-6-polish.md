@@ -13,11 +13,11 @@ This phase addresses polish items to improve code quality, documentation, and te
 |-------|-------|--------|----------|
 | #38 | Generate uv.lock file | DONE | Critical |
 | #37 | Integrate or remove shared schemas | DONE | Medium |
-| #36 | Update fixtures to match real output | TODO | High |
+| #36 | Update fixtures to match real output | DONE | High |
 | #33 | Test coverage improvements | TODO | High |
 | #32 | User documentation | TODO | Medium |
 | #31 | Configuration system | TODO | Medium |
-| #29 | Error handling audit | TODO | High |
+| #29 | Error handling audit | DONE | High |
 | #30 | Create card database | TODO | Low (deprioritized) |
 
 ## Detailed Plans
@@ -306,11 +306,11 @@ These can largely be done in parallel, with #33 waiting for #36 fixture updates.
 
 Phase 6 is complete when:
 - [x] Shared schemas removed (#37)
-- [ ] Fixtures updated to match real format (#36)
+- [x] Fixtures updated to match real format (#36)
 - [ ] Test coverage improved with meaningful tests (#33)
 - [ ] User documentation created (#32)
 - [ ] Configuration system centralized (#31)
-- [ ] Error handling audited and improved (#29)
+- [x] Error handling audited and improved (#29)
 - [ ] All tests pass
 - [ ] Types pass
 - [ ] Lints pass

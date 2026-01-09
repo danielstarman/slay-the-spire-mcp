@@ -48,7 +48,23 @@ After review, choose ONE:
 
 1. **Behavioral issues found** → Use Task tool to spawn `implementer` agent with fix instructions → After fix, YOU review again
 2. **Complexity issues found** → Use Task tool to spawn `refactor` agent → After refactor, YOU review again
-3. **All checks pass** → Report "Ship it!" to main thread
+3. **All checks pass** → Report "Ship it!" to main thread AND clean up the plan file (see below)
+
+## Plan File Cleanup (On Ship It!)
+
+When you approve with "Ship it!", you MUST also:
+
+1. **Extract any long-term value** from the plan file:
+   - Key decisions/rationale → `docs/architecture-decisions.md`
+   - Lessons learned → `docs/architecture-decisions.md`
+   - New conventions → `CLAUDE.md`
+
+2. **Delete the plan file**:
+   ```bash
+   rm .claude/plans/<feature>-spec.md
+   ```
+
+Plans are temporary working documents. Once implementation is verified, they should not linger. The permanent record lives in `docs/` and `CLAUDE.md`.
 
 ## Critical Rule
 
