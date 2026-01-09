@@ -675,14 +675,29 @@ class TestStdinEOFRetry:
     async def test_threaded_stdin_reader_restart(
         self, tcp_server: tuple[str, int, list[bytes]], mock_stdout: MagicMock
     ) -> None:
-        """ThreadedStdinReader restart method exists and can be called."""
+        """ThreadedStdinReader can restart and successfully read after restart."""
         from unittest.mock import Mock, patch
         from spire_bridge.relay import ThreadedStdinReader
-        import threading
 
         # Mock stdin to avoid pytest capture issues
         mock_stdin_buffer = Mock()
-        mock_stdin_buffer.readline.return_value = b""  # Always EOF
+        call_count = 0
+
+        def mock_readline():
+            nonlocal call_count
+            call_count += 1
+            # First thread: return data then EOF
+            if call_count == 1:
+                return b'{"test": "first"}\n'
+            elif call_count == 2:
+                return b""  # EOF - causes thread to exit
+            # After restart: return different data then EOF
+            elif call_count == 3:
+                return b'{"test": "restarted"}\n'
+            else:
+                return b""  # EOF
+
+        mock_stdin_buffer.readline = mock_readline
 
         with patch("sys.stdin") as mock_sys_stdin:
             mock_sys_stdin.buffer = mock_stdin_buffer
@@ -697,20 +712,27 @@ class TestStdinEOFRetry:
             # Start the reader
             reader.start(loop)
 
-            # Thread was created
-            assert reader._thread is not None
-            original_thread = reader._thread
+            # Read first line
+            line1 = await reader.readline()
+            assert line1 == b'{"test": "first"}\n'
 
-            # Wait for thread to exit (returns EOF immediately)
+            # Next readline gets EOF
+            eof1 = await reader.readline()
+            assert eof1 == b""
+
+            # Wait for thread to exit
             await asyncio.sleep(0.2)
             assert not reader.is_running()
 
-            # Can call restart
+            # Restart the reader
             reader.restart()
 
-            # A new thread was created
-            assert reader._thread is not None
-            assert reader._thread != original_thread  # Different thread object
+            # Wait for new thread to start
+            await asyncio.sleep(0.1)
+
+            # Should be able to read from restarted reader
+            line2 = await reader.readline()
+            assert line2 == b'{"test": "restarted"}\n', f"Expected restarted data, got {line2}"
 
             # Clean up
             await asyncio.sleep(0.2)

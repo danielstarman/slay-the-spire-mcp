@@ -375,7 +375,7 @@ class Relay:
             await self._handle_stdin_with_retry(stdin)
         except StopAsyncIteration:
             # EOF persisted after retries, exit gracefully
-            pass
+            logger.info("Stdin relay shutting down after exhausting retries")
         except asyncio.CancelledError:
             logger.info("Relay cancelled")
         finally:
@@ -404,7 +404,7 @@ class Relay:
             await self._handle_stdin_with_retry(stdin)
         except StopAsyncIteration:
             # EOF persisted after retries, exit gracefully
-            pass
+            logger.info("Bidirectional relay shutting down after exhausting retries")
         except asyncio.CancelledError:
             logger.info("Relay cancelled")
         finally:
@@ -497,6 +497,8 @@ class ThreadedStdinReader:
             return
 
         logger.info("Restarting ThreadedStdinReader")
+        # Create a fresh queue to avoid returning stale EOF markers or data
+        self._queue = asyncio.Queue()
         self._thread = threading.Thread(target=self._reader_thread, daemon=True)
         self._thread.start()
 
