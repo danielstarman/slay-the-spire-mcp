@@ -14,7 +14,11 @@ import logging
 from collections.abc import Callable
 from typing import Any
 
-from slay_the_spire_mcp.models import GameState, parse_game_state_from_message
+from slay_the_spire_mcp.models import (
+    FloorHistory,
+    GameState,
+    parse_game_state_from_message,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +42,7 @@ class GameStateManager:
         self._previous_state: GameState | None = None
         self._state_callbacks: list[Callable[[GameState], None]] = []
         self._lock = asyncio.Lock()
+        self._floor_history: list[FloorHistory] = []
 
     def get_current_state(self) -> GameState | None:
         """Get the current game state.
@@ -55,6 +60,14 @@ class GameStateManager:
         """
         return self._previous_state
 
+    def get_floor_history(self) -> list[FloorHistory]:
+        """Get the history of visited nodes in the current run.
+
+        Returns:
+            A copy of the floor history list.
+        """
+        return self._floor_history.copy()
+
     async def update_state(self, new_state: GameState) -> None:
         """Update the current game state.
 
@@ -64,6 +77,8 @@ class GameStateManager:
         async with self._lock:
             self._previous_state = self._current_state
             self._current_state = new_state
+            # Track floor transitions
+            self._track_floor_transition_sync(new_state)
 
         # Notify callbacks (outside lock)
         for callback in self._state_callbacks:
@@ -90,6 +105,9 @@ class GameStateManager:
         self._previous_state = self._current_state
         self._current_state = new_state
 
+        # Track floor transitions
+        self._track_floor_transition_sync(new_state)
+
         # Notify callbacks
         for callback in self._state_callbacks:
             try:
@@ -112,10 +130,93 @@ class GameStateManager:
         """
         self._state_callbacks.append(callback)
 
+    def _track_floor_transition_sync(self, new_state: GameState) -> None:
+        """Track floor transitions and record visited nodes.
+
+        Args:
+            new_state: The new game state
+        """
+        # If this is a new run (floor resets to 0 or 1), clear history
+        if (
+            new_state.floor <= 1
+            and self._previous_state
+            and self._previous_state.floor > new_state.floor
+        ):
+            self._floor_history.clear()
+
+        # If floor increased, record the previous floor's node
+        if self._previous_state and new_state.floor > self._previous_state.floor:
+            # Try to get node symbol from previous state
+            symbol = self._extract_node_symbol(self._previous_state)
+            # Use "?" as fallback for unknown node types
+            if not symbol:
+                symbol = "?"
+            entry = FloorHistory(
+                floor=self._previous_state.floor,
+                symbol=symbol,
+                details=None,  # Can be enhanced later
+            )
+            self._floor_history.append(entry)
+
+    def _extract_node_symbol(self, state: GameState) -> str | None:
+        """Extract the node symbol from game state.
+
+        Tries multiple approaches:
+        1. If map data exists with current_node, look up the symbol
+        2. If screen_state has current_node, use that
+        3. Infer from screen_type/room_type
+
+        Args:
+            state: The game state to extract symbol from
+
+        Returns:
+            The node symbol, or None if it cannot be determined
+        """
+        # Try to get from map data with current_node
+        if state.map and state.current_node:
+            x, y = state.current_node
+            for row in state.map:
+                for node in row:
+                    if node.x == x and node.y == y:
+                        return node.symbol
+
+        # Try to get from screen_state
+        if isinstance(state.screen_state, dict):
+            current_node_data = state.screen_state.get("current_node")
+            if isinstance(current_node_data, dict):
+                symbol = current_node_data.get("symbol")
+                if isinstance(symbol, str):
+                    return symbol
+
+        # Fallback: infer from screen_type or room_type
+        # This is less reliable but better than nothing
+        screen_state_dict = (
+            state.screen_state if isinstance(state.screen_state, dict) else {}
+        )
+        room_type = screen_state_dict.get("room_type", "")
+        screen_type_str = str(state.screen_type).upper()
+        room_type_upper = room_type.upper()
+
+        if "MONSTER" in room_type_upper or "COMBAT" in screen_type_str:
+            return "M"
+        elif "ELITE" in room_type_upper:
+            return "E"
+        elif "EVENT" in room_type_upper or "EVENT" in screen_type_str:
+            return "?"
+        elif "REST" in room_type_upper or "REST" in screen_type_str:
+            return "R"
+        elif "SHOP" in room_type_upper or "SHOP" in screen_type_str:
+            return "$"
+        elif "TREASURE" in room_type_upper or "TREASURE" in screen_type_str:
+            return "T"
+
+        return None
+
     def clear_state(self) -> None:
-        """Clear the current state."""
+        """Clear the current state and floor history."""
         self._current_state = None
         self._previous_state = None
+        self._floor_history.clear()
 
 
 class TCPListener:
