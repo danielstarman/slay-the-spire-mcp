@@ -10,6 +10,7 @@ Environment Variables:
     STS_HTTP_PORT: HTTP port for MCP server (default: 8000)
     STS_WS_PORT: WebSocket port for overlay (default: 31337)
     STS_LOG_LEVEL: Logging level (default: INFO)
+    STS_TRANSPORT: MCP transport type: 'http' or 'stdio' (default: http)
     STS_MOCK_MODE: Enable mock mode (default: false)
     STS_MOCK_FIXTURE: Path to fixture file/directory for mock mode
     STS_MOCK_DELAY_MS: Delay between states in mock replay (default: 100)
@@ -34,7 +35,14 @@ from pydantic import ValidationError
 
 from slay_the_spire_mcp.config import Config, get_config, reset_config, set_config
 from slay_the_spire_mcp.mock import MockModeError
-from slay_the_spire_mcp.server import AppContext
+from slay_the_spire_mcp.server import (
+    AppContext,
+    PreInitializedContext,
+    _create_terminal_display_callback,
+    app_lifespan,
+    set_pre_initialized_context,
+)
+from slay_the_spire_mcp.state import GameStateManager, TCPListener
 
 # Type alias for MCP Context with our AppContext - must be at module level
 # for FastMCP decorator to evaluate type annotations correctly
@@ -67,11 +75,11 @@ def _migrate_legacy_env_vars() -> None:
 
 
 def run_mock_server(config: Config) -> int:
-    """Run the MCP server in mock mode with HTTP transport.
+    """Run the MCP server in mock mode.
 
     This starts the FastMCP server with:
     - Mock lifespan that loads fixtures instead of connecting to TCP
-    - Streamable HTTP transport for Claude Code connectivity
+    - Configurable transport (HTTP or stdio)
     - All tools, resources, and prompts registered
 
     Args:
@@ -81,6 +89,9 @@ def run_mock_server(config: Config) -> int:
         Exit code (0 for success, non-zero for error)
     """
     logger = logging.getLogger(__name__)
+
+    # Determine transport type
+    use_stdio = config.transport == "stdio"
 
     try:
         # Import here to avoid circular imports and to allow lazy loading
@@ -95,7 +106,7 @@ def run_mock_server(config: Config) -> int:
 
         mock_server = FastMCP(
             name="slay-the-spire",
-            host="127.0.0.1",
+            host=config.tcp_host,
             port=config.http_port,
             log_level=config.log_level,
             lifespan=bound_lifespan,
@@ -104,14 +115,26 @@ def run_mock_server(config: Config) -> int:
         # Register all tools, resources, and prompts on the mock server
         _register_handlers(mock_server)
 
-        logger.info(
-            f"Starting MCP server in mock mode on http://127.0.0.1:{config.http_port}"
-        )
-        print(f"MCP server running at http://127.0.0.1:{config.http_port}/mcp")
-        print("Press Ctrl+C to stop.")
+        if use_stdio:
+            # stdio mode: no print to stdout (would interfere with protocol)
+            # Log to stderr instead
+            logger.info("Starting MCP server in mock mode with stdio transport")
+            print("MCP server starting with stdio transport...", file=sys.stderr)
 
-        # Run the server with streamable-http transport
-        mock_server.run(transport="streamable-http")
+            # Run the server with stdio transport
+            mock_server.run(transport="stdio")
+        else:
+            # HTTP mode: safe to print to stdout
+            logger.info(
+                f"Starting MCP server in mock mode on http://{config.tcp_host}:{config.http_port}"
+            )
+            print(
+                f"MCP server running at http://{config.tcp_host}:{config.http_port}/mcp"
+            )
+            print("Press Ctrl+C to stop.")
+
+            # Run the server with streamable-http transport
+            mock_server.run(transport="streamable-http")
 
         return 0
 
@@ -120,7 +143,157 @@ def run_mock_server(config: Config) -> int:
         print(f"Error: {e}", file=sys.stderr)
         return 1
     except KeyboardInterrupt:
-        print("\nServer stopped.")
+        if not use_stdio:
+            print("\nServer stopped.")
+        return 0
+    except Exception as e:
+        logger.error(f"Server error: {e}", exc_info=True)
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+
+
+async def _start_tcp_listener(config: Config) -> tuple[GameStateManager, TCPListener]:
+    """Start the TCP listener before the MCP server.
+
+    This ensures port 7777 is listening immediately on startup,
+    not waiting for the first MCP request.
+
+    Args:
+        config: Application configuration
+
+    Returns:
+        Tuple of (state_manager, tcp_listener)
+    """
+    logger = logging.getLogger(__name__)
+
+    # Create state manager
+    state_manager = GameStateManager()
+    logger.info("GameStateManager initialized")
+
+    # Register terminal display callback
+    state_manager.on_state_change(_create_terminal_display_callback())
+    logger.info("Terminal display callback registered")
+
+    # Create and start TCP listener
+    tcp_listener = TCPListener(
+        state_manager, host=config.tcp_host, port=config.tcp_port
+    )
+    await tcp_listener.start()
+    logger.info(f"TCP listener started on {config.tcp_host}:{config.tcp_port}")
+
+    return state_manager, tcp_listener
+
+
+async def _stop_tcp_listener(tcp_listener: TCPListener) -> None:
+    """Stop the TCP listener cleanly.
+
+    Args:
+        tcp_listener: The TCP listener to stop
+    """
+    logger = logging.getLogger(__name__)
+    if tcp_listener.is_running:
+        await tcp_listener.stop()
+        logger.info("TCP listener stopped")
+
+
+def run_server(config: Config) -> int:
+    """Run the MCP server in normal mode.
+
+    This starts the FastMCP server with:
+    - TCP listener started BEFORE the MCP server (for immediate availability)
+    - App lifespan that uses pre-initialized context
+    - Configurable transport (HTTP or stdio)
+    - All tools, resources, and prompts registered
+
+    Args:
+        config: Application configuration with mock_mode=False
+
+    Returns:
+        Exit code (0 for success, non-zero for error)
+    """
+    import asyncio
+
+    logger = logging.getLogger(__name__)
+
+    # Determine transport type
+    use_stdio = config.transport == "stdio"
+
+    # We need to start the TCP listener before the MCP server runs.
+    # Since server.run() is blocking and synchronous, we use asyncio.run()
+    # to start the TCP listener first, then run the MCP server in the same loop.
+
+    async def run_with_tcp_listener() -> int:
+        """Async wrapper that starts TCP listener then runs MCP server."""
+        state_manager: GameStateManager | None = None
+        tcp_listener: TCPListener | None = None
+
+        try:
+            # Start TCP listener first
+            state_manager, tcp_listener = await _start_tcp_listener(config)
+
+            # Set the pre-initialized context so app_lifespan can use it
+            set_pre_initialized_context(
+                PreInitializedContext(
+                    state_manager=state_manager,
+                    tcp_listener=tcp_listener,
+                    config=config,
+                )
+            )
+
+            # Create a lifespan bound to our config
+            bound_lifespan = partial(app_lifespan, config=config)
+
+            # Create a new FastMCP server with app lifespan
+            from mcp.server.fastmcp import FastMCP
+
+            server = FastMCP(
+                name="slay-the-spire",
+                host=config.tcp_host,
+                port=config.http_port,
+                log_level=config.log_level,
+                lifespan=bound_lifespan,
+            )
+
+            # Register all tools, resources, and prompts on the server
+            _register_handlers(server)
+
+            if use_stdio:
+                # stdio mode: no print to stdout (would interfere with protocol)
+                logger.info("Starting MCP server with stdio transport")
+                print("MCP server starting with stdio transport...", file=sys.stderr)
+
+                # Run the server with stdio transport (async version)
+                await server.run_stdio_async()
+            else:
+                # HTTP mode: safe to print to stdout
+                logger.info(
+                    f"Starting MCP server on http://{config.tcp_host}:{config.http_port}"
+                )
+                print(
+                    f"MCP server running at http://{config.tcp_host}:{config.http_port}/mcp"
+                )
+                print(f"TCP listener for bridge on {config.tcp_host}:{config.tcp_port}")
+                print("Press Ctrl+C to stop.")
+
+                # Run the server with streamable-http transport (async version)
+                await server.run_streamable_http_async()
+
+            return 0
+
+        finally:
+            # Clean up pre-initialized context
+            set_pre_initialized_context(None)
+
+            # Stop TCP listener on shutdown
+            if tcp_listener is not None:
+                await _stop_tcp_listener(tcp_listener)
+
+    try:
+        return asyncio.run(run_with_tcp_listener())
+
+    except KeyboardInterrupt:
+        if not use_stdio:
+            print("\nServer stopped.")
         return 0
     except Exception as e:
         logger.error(f"Server error: {e}", exc_info=True)
@@ -455,21 +628,25 @@ def main() -> int:
     # Set the config singleton so the lifespan can access it
     set_config(config)
 
-    print("Slay the Spire MCP Server v0.1.0")
-    print("Configuration:")
-    print(f"  TCP: {config.tcp_host}:{config.tcp_port}")
-    print(f"  HTTP: {config.http_port}")
-    print(f"  WebSocket: {config.ws_port}")
-    print(f"  Log level: {config.log_level}")
+    # For stdio transport, redirect all startup prints to stderr
+    # to avoid interfering with the JSON-RPC protocol on stdout
+    use_stdio = config.transport == "stdio"
+    out = sys.stderr if use_stdio else sys.stdout
+
+    print("Slay the Spire MCP Server v0.1.0", file=out)
+    print("Configuration:", file=out)
+    print(f"  TCP: {config.tcp_host}:{config.tcp_port}", file=out)
+    print(f"  HTTP: {config.http_port}", file=out)
+    print(f"  WebSocket: {config.ws_port}", file=out)
+    print(f"  Log level: {config.log_level}", file=out)
+    print(f"  Transport: {config.transport}", file=out)
 
     if config.mock_mode:
-        print(f"  Mock mode: enabled (fixture: {config.mock_fixture})")
+        print(f"  Mock mode: enabled (fixture: {config.mock_fixture})", file=out)
         return run_mock_server(config)
 
-    # Normal mode - not yet implemented
-    print("Server not yet implemented.")
-    print("Hint: Set STS_MOCK_MODE=true and STS_MOCK_FIXTURE=<path> for mock mode.")
-    return 0
+    # Normal mode - run with app_lifespan (TCP listener for bridge)
+    return run_server(config)
 
 
 if __name__ == "__main__":

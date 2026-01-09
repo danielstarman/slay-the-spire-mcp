@@ -36,6 +36,7 @@ def clean_env() -> Generator[None, None, None]:
             "STS_HTTP_PORT",
             "STS_WS_PORT",
             "STS_LOG_LEVEL",
+            "STS_TRANSPORT",
             "STS_MOCK_MODE",
             "STS_MOCK_FIXTURE",
             "STS_MOCK_DELAY_MS",
@@ -142,6 +143,28 @@ class TestConfigHappyPath:
 
         assert config.mock_delay_ms == 500
 
+    def test_transport_default_is_http(self) -> None:
+        """Transport defaults to http."""
+        config = Config()
+
+        assert config.transport == "http"
+
+    def test_transport_stdio_override(self) -> None:
+        """Transport can be set to stdio via env var."""
+        os.environ["STS_TRANSPORT"] = "stdio"
+
+        config = Config()
+
+        assert config.transport == "stdio"
+
+    def test_transport_http_explicit(self) -> None:
+        """Transport can be explicitly set to http via env var."""
+        os.environ["STS_TRANSPORT"] = "http"
+
+        config = Config()
+
+        assert config.transport == "http"
+
     def test_config_to_dict(self) -> None:
         """Config can be converted to dictionary."""
         config = Config()
@@ -154,6 +177,7 @@ class TestConfigHappyPath:
         assert config_dict["http_port"] == 8000
         assert config_dict["ws_port"] == 31337
         assert config_dict["log_level"] == "INFO"
+        assert config_dict["transport"] == "http"
         assert config_dict["mock_mode"] is False
 
 
@@ -297,6 +321,13 @@ class TestConfigErrors:
         os.environ["STS_MOCK_MODE"] = "true"
         os.environ["STS_MOCK_FIXTURE"] = "/path"
         os.environ["STS_MOCK_DELAY_MS"] = "-100"
+
+        with pytest.raises(ValidationError):
+            Config()
+
+    def test_invalid_transport(self) -> None:
+        """Invalid transport value raises validation error."""
+        os.environ["STS_TRANSPORT"] = "invalid"
 
         with pytest.raises(ValidationError):
             Config()

@@ -9,31 +9,40 @@ This document consolidates research and decision rationale from the project's pl
 
 ## 1. Current Project Status
 
-### Overall Health: FAIR (Early MVP with Critical Gaps)
+### Overall Health: GOOD (MVP Near Complete)
 
-The project has a solid architectural foundation but significant gaps between specification and implementation.
+**Last Audited**: 2026-01-08
+
+The project has most MVP functionality implemented. The main gap is wiring the components together.
 
 **What's Working**:
 - Well-structured monorepo (mod/, bridge/, server/, shared/)
 - Solid async Python patterns in bridge/server
-- Working stdin->TCP relay with reconnection logic
-- Good test infrastructure (pytest, fixtures)
+- **Bidirectional relay** (stdin↔TCP↔stdout) - fully implemented
+- **TCP listener** with `send_command()` for sending commands to bridge
+- **All MCP tools**: get_game_state, play_card, end_turn, choose, potion
+- **All MCP resources**: game://state, game://player, game://combat, game://map
+- **All MCP prompts**: analyze_combat, evaluate_card_reward, plan_path, evaluate_event
+- **Decision detection**: All 10 screen types handled
+- **Run context tracking**: Combat/event history, deck evolution, trends
+- **Terminal renderer**: Full ANSI color output for all screen types
+- Mock mode works end-to-end with Claude
 
-**Critical Gaps**:
-- Bidirectional communication incomplete (TCP->stdout missing)
-- MCP server is placeholder only
-- Java mod cannot compile (dependency JARs not present)
-- Shared schemas exist but aren't validated
+**Remaining Gaps**:
+- Normal mode not wired up (see #39) - `__main__.py` needs ~15 lines
+- Auto-commentary trigger not implemented
+- Run context not persisted to disk
+- Java mod build not verified
 
 **Implementation Progress**:
 | Phase | Status | Completeness |
 |-------|--------|--------------|
-| Phase 1: Foundation | Partial | 60% |
-| Phase 2: Bridge Communication | Partial | 50% |
-| Phase 3: MCP Integration | Not Started | 5% |
-| Phase 4: Decision Detection | Not Started | 0% |
+| Phase 1: Foundation | Complete | 100% |
+| Phase 2: Bridge Communication | Complete | 100% |
+| Phase 3: MCP Integration | Nearly Complete | 95% |
+| Phase 4: Decision Detection | Complete | 100% |
 | Phase 5: Overlay Foundation | Not Started | 0% |
-| Phase 6: Polish | Not Started | 0% |
+| Phase 6: Polish | Partial | 60% |
 
 ---
 

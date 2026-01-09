@@ -93,6 +93,12 @@ class Config(BaseSettings):
         description="Logging level",
     )
 
+    # Transport configuration
+    transport: Literal["http", "stdio"] = Field(
+        default="http",
+        description="MCP transport type: 'http' for streamable-http, 'stdio' for stdio",
+    )
+
     # Mock mode configuration
     mock_mode: bool = Field(
         default=False,
@@ -145,6 +151,7 @@ class Config(BaseSettings):
             "http_port": self.http_port,
             "ws_port": self.ws_port,
             "log_level": self.log_level,
+            "transport": self.transport,
             "mock_mode": self.mock_mode,
             "mock_fixture": self.mock_fixture,
             "mock_delay_ms": self.mock_delay_ms,

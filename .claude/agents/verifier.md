@@ -27,6 +27,7 @@ Your job: Review implementation with high standards. This is NOT a rubber stamp.
 - [ ] **Type hints everywhere** — No `Any` without justification?
 - [ ] **Async patterns correct** — Proper await, no blocking in async?
 - [ ] **Error handling explicit** — No silent failures?
+- [ ] **NO `except Exception: pass`** — This pattern is **NEVER acceptable**. Every exception must be logged with full context (`exc_info=True`). Silent exception swallowing caused a critical production bug where the bridge died invisibly. If you see this pattern, **reject the PR immediately**.
 - [ ] **Single Source of Truth** — No duplicated game logic?
 - [ ] **No debug artifacts** — No leftover prints, commented code?
 
@@ -34,6 +35,12 @@ Your job: Review implementation with high standards. This is NOT a rubber stamp.
 - [ ] **Tests pass** — `uv run python -m pytest`
 - [ ] **Types pass** — `uv run python -m mypy src`
 - [ ] **Lints pass** — `uv run ruff check src`
+
+### Documentation Currency
+- [ ] **Planning docs updated** — If implementation changes scope or status, update `.claude/plans/decisions-and-research.md`
+- [ ] **GitHub issues accurate** — Relevant issues commented/closed? New issues created for discovered work?
+- [ ] **CLAUDE.md current** — Any new conventions or patterns documented?
+- [ ] **Code comments match behavior** — Docstrings accurate for changed functions?
 
 ## Decision Points
 

@@ -15,7 +15,8 @@ from __future__ import annotations
 
 import json
 import logging
-from collections.abc import AsyncIterator
+import sys
+from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 
@@ -26,9 +27,116 @@ from slay_the_spire_mcp import prompts as prompt_impl
 from slay_the_spire_mcp import resources as resource_impl
 from slay_the_spire_mcp import tools as tool_impl
 from slay_the_spire_mcp.config import Config, get_config
+from slay_the_spire_mcp.detection import detect_decision_point
+from slay_the_spire_mcp.models import GameState
 from slay_the_spire_mcp.state import GameStateManager, TCPListener
+from slay_the_spire_mcp.terminal import Colors, render_game_state
 
 logger = logging.getLogger(__name__)
+
+
+# ==============================================================================
+# Pre-initialized Context for TCP Listener
+# ==============================================================================
+
+
+@dataclass
+class PreInitializedContext:
+    """Holds pre-initialized state_manager and tcp_listener.
+
+    This allows the TCP listener to be started BEFORE the MCP server runs,
+    ensuring port 7777 is listening immediately on startup rather than
+    waiting for the first MCP request to trigger the lifespan.
+    """
+
+    state_manager: GameStateManager
+    tcp_listener: TCPListener | None
+    config: Config
+
+
+# Module-level holder for pre-initialized context
+# Set by run_server() before the MCP server starts
+_pre_initialized_context: PreInitializedContext | None = None
+
+
+def set_pre_initialized_context(ctx: PreInitializedContext | None) -> None:
+    """Set the pre-initialized context for the lifespan to use.
+
+    Args:
+        ctx: The pre-initialized context, or None to clear it
+    """
+    global _pre_initialized_context
+    _pre_initialized_context = ctx
+
+
+def get_pre_initialized_context() -> PreInitializedContext | None:
+    """Get the pre-initialized context.
+
+    Returns:
+        The pre-initialized context, or None if not set
+    """
+    return _pre_initialized_context
+
+
+# Separator for terminal output
+SEPARATOR = "=" * 67
+
+
+def _create_terminal_display_callback() -> Callable[[GameState], None]:
+    """Create a callback function for displaying state changes to terminal.
+
+    Returns:
+        A callback function that renders game state and decision points to stderr.
+    """
+
+    def display_state_change(state: GameState) -> None:
+        """Display state change to terminal via stderr.
+
+        This callback:
+        1. Prints a separator and header with floor/act/screen info
+        2. Renders the full game state using terminal.render_game_state()
+        3. Detects and displays decision points if any
+
+        Args:
+            state: The new game state
+        """
+        try:
+            # Print separator and header
+            print(SEPARATOR, file=sys.stderr)
+            print(
+                f"{Colors.BOLD}[STATE UPDATE]{Colors.RESET} "
+                f"Floor {state.floor} | Act {state.act} | {state.screen_type}",
+                file=sys.stderr,
+            )
+            print(SEPARATOR, file=sys.stderr)
+
+            # Render the full game state
+            rendered = render_game_state(state)
+            print(rendered, file=sys.stderr)
+            print(file=sys.stderr)
+
+            # Detect and display decision point
+            decision = detect_decision_point(state)
+            if decision is not None:
+                choices_str = ", ".join(decision.choices[:5])
+                if len(decision.choices) > 5:
+                    choices_str += f", ... (+{len(decision.choices) - 5} more)"
+
+                print(
+                    f"{Colors.CYAN}[DECISION POINT]{Colors.RESET} "
+                    f"{Colors.BOLD}{decision.decision_type.value}{Colors.RESET}",
+                    file=sys.stderr,
+                )
+                print(f"  Choices: {choices_str}", file=sys.stderr)
+
+            print(SEPARATOR, file=sys.stderr)
+            print(file=sys.stderr)  # Extra blank line for readability
+
+        except Exception as e:
+            # Log errors but don't crash - this is a display callback
+            logger.error(f"Error in terminal display callback: {e}", exc_info=True)
+
+    return display_state_change
 
 
 @dataclass
@@ -60,11 +168,11 @@ async def app_lifespan(
 ) -> AsyncIterator[AppContext]:
     """Manage application lifecycle with type-safe context.
 
-    This context manager:
-    1. Creates a GameStateManager on startup
-    2. Starts TCP listener for bridge communication
-    3. Yields AppContext for tools/resources to access
-    4. Stops TCP listener on shutdown
+    This context manager uses the pre-initialized context if available,
+    which allows the TCP listener to be started before the MCP server runs.
+
+    The lifespan does NOT stop the TCP listener on shutdown - that is handled
+    by the caller (run_server) to ensure clean shutdown order.
 
     Args:
         server: FastMCP server instance (required by lifespan protocol)
@@ -73,12 +181,29 @@ async def app_lifespan(
     Yields:
         AppContext containing state_manager, tcp_listener, and config
     """
-    # Use provided config or get from singleton
+    # Check for pre-initialized context first
+    pre_ctx = get_pre_initialized_context()
+    if pre_ctx is not None:
+        # Use pre-initialized context - TCP listener already started
+        logger.info("Using pre-initialized context (TCP listener already running)")
+        yield AppContext(
+            state_manager=pre_ctx.state_manager,
+            tcp_listener=pre_ctx.tcp_listener,
+            config=pre_ctx.config,
+        )
+        # Don't stop TCP listener here - caller handles shutdown
+        return
+
+    # Fallback: create fresh context (for testing or when not pre-initialized)
     cfg = config if config is not None else get_config()
 
     # Create state manager
     state_manager = GameStateManager()
-    logger.info("GameStateManager initialized")
+    logger.info("GameStateManager initialized (fallback mode)")
+
+    # Register terminal display callback
+    state_manager.on_state_change(_create_terminal_display_callback())
+    logger.info("Terminal display callback registered")
 
     # Create and start TCP listener
     tcp_listener = TCPListener(state_manager, host=cfg.tcp_host, port=cfg.tcp_port)
@@ -94,7 +219,7 @@ async def app_lifespan(
         )
 
     finally:
-        # Always stop TCP listener on shutdown
+        # Stop TCP listener on shutdown (only in fallback mode)
         if tcp_listener.is_running:
             await tcp_listener.stop()
             logger.info("TCP listener stopped")
@@ -129,6 +254,10 @@ async def mock_lifespan(
     # Create state manager
     state_manager = GameStateManager()
     logger.info("GameStateManager initialized (mock mode)")
+
+    # Register terminal display callback
+    state_manager.on_state_change(_create_terminal_display_callback())
+    logger.info("Terminal display callback registered (mock mode)")
 
     # Create and initialize mock provider
     mock_provider = MockStateProvider(

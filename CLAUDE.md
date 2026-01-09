@@ -317,7 +317,7 @@ Slay the Spire + CommunicationMod (existing mod)
 "slay://run"            # Run context and history
 ```
 
-**Note**: Tools and resources are defined but not yet implemented. See `server/src/slay_the_spire_mcp/tools.py` and `resources.py`.
+**Note**: Tools and resources are fully implemented and work in mock mode. Real game mode requires wiring (see issue #39).
 
 ## Key Conventions
 
@@ -327,6 +327,10 @@ Slay the Spire + CommunicationMod (existing mod)
 - **Explicit error handling** - No silent failures
 - **Single Source of Truth** - Game state models defined once, used everywhere
 - **Test-Driven Development** - Write tests first, then implement
+- **Documentation Currency** - Keep docs in sync with code:
+  - Update `.claude/plans/decisions-and-research.md` when implementation status changes
+  - Comment on GitHub issues when scope or status changes
+  - Verifier agent checks this as part of the review checklist
 
 ## Test-Driven Development (TDD)
 

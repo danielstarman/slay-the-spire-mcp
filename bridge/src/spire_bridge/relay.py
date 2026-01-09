@@ -10,8 +10,9 @@ import asyncio
 import contextlib
 import logging
 import sys
+import threading
 from asyncio import StreamReader, StreamWriter
-from typing import TextIO
+from typing import Protocol, TextIO
 
 from spire_bridge.protocol import (
     DEFAULT_HOST,
@@ -24,6 +25,14 @@ from spire_bridge.protocol import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+class AsyncLineReader(Protocol):
+    """Protocol for async line readers (duck typing for StreamReader)."""
+
+    async def readline(self) -> bytes:
+        """Read a line asynchronously."""
+        ...
 
 
 class Relay:
@@ -138,9 +147,7 @@ class Relay:
                 )
                 await asyncio.sleep(backoff)
 
-        logger.error(
-            "Failed to connect after %d attempts", self.max_reconnect_attempts
-        )
+        logger.error("Failed to connect after %d attempts", self.max_reconnect_attempts)
         return False
 
     async def _ensure_connected(self) -> bool:
@@ -285,7 +292,7 @@ class Relay:
         except asyncio.CancelledError:
             logger.info("TCP to stdout relay cancelled")
 
-    async def run_stdin_relay(self, stdin: asyncio.StreamReader) -> None:
+    async def run_stdin_relay(self, stdin: AsyncLineReader) -> None:
         """Run the relay, reading from stdin and forwarding to TCP.
 
         This is the main relay loop. It reads lines from stdin
@@ -315,7 +322,7 @@ class Relay:
         finally:
             await self.close()
 
-    async def run_bidirectional(self, stdin: asyncio.StreamReader) -> None:
+    async def run_bidirectional(self, stdin: AsyncLineReader) -> None:
         """Run bidirectional relay between stdin/stdout and TCP.
 
         This is the main entry point that runs both:
@@ -353,17 +360,92 @@ class Relay:
             await self.close()
 
 
-async def create_stdin_reader() -> asyncio.StreamReader:
+class ThreadedStdinReader:
+    """Windows-compatible async stdin reader using a background thread.
+
+    On Windows, asyncio's ProactorEventLoop (the default since Python 3.8)
+    doesn't support `loop.connect_read_pipe()` for stdin. This class works
+    around that limitation by using a daemon thread that performs blocking
+    reads from stdin and puts lines into an asyncio-compatible queue.
+    """
+
+    def __init__(self) -> None:
+        """Initialize the threaded stdin reader."""
+        self._queue: asyncio.Queue[bytes] = asyncio.Queue()
+        self._thread: threading.Thread | None = None
+        self._loop: asyncio.AbstractEventLoop | None = None
+
+    def _reader_thread(self) -> None:
+        """Background thread that reads from stdin and puts lines in queue.
+
+        This runs in a separate thread and performs blocking stdin reads.
+        Each line is put into the asyncio queue in a thread-safe manner.
+        """
+        try:
+            while True:
+                # Use stdin.buffer for binary reads (consistent with StreamReader)
+                line = sys.stdin.buffer.readline()
+                if not line:
+                    # EOF - put empty bytes to signal end
+                    logger.info("ThreadedStdinReader: stdin EOF received")
+                    break
+                # Schedule the put on the event loop (thread-safe)
+                if self._loop is not None:
+                    self._loop.call_soon_threadsafe(self._queue.put_nowait, line)
+        except Exception as e:
+            # Log the actual error - silent failures are unacceptable!
+            logger.error(
+                "ThreadedStdinReader crashed: %s: %s",
+                type(e).__name__,
+                e,
+                exc_info=True,
+            )
+        finally:
+            # Signal EOF by putting empty bytes
+            if self._loop is not None:
+                self._loop.call_soon_threadsafe(self._queue.put_nowait, b"")
+
+    def start(self, loop: asyncio.AbstractEventLoop) -> None:
+        """Start the background reader thread.
+
+        Args:
+            loop: The asyncio event loop to use for queue operations
+        """
+        self._loop = loop
+        self._thread = threading.Thread(target=self._reader_thread, daemon=True)
+        self._thread.start()
+
+    async def readline(self) -> bytes:
+        """Read a line from stdin asynchronously.
+
+        Returns:
+            The next line from stdin as bytes, or empty bytes on EOF.
+        """
+        return await self._queue.get()
+
+
+async def create_stdin_reader() -> AsyncLineReader:
     """Create an async reader for stdin.
 
+    On Windows, uses a thread-based reader since ProactorEventLoop
+    doesn't support connect_read_pipe() for stdin. On other platforms,
+    uses the standard asyncio approach.
+
     Returns:
-        An asyncio StreamReader connected to stdin
+        An async reader with a readline() method
     """
-    loop = asyncio.get_running_loop()
-    reader = asyncio.StreamReader()
-    protocol = asyncio.StreamReaderProtocol(reader)
-    await loop.connect_read_pipe(lambda: protocol, sys.stdin)
-    return reader
+    if sys.platform == "win32":
+        # Windows: use thread-based reader
+        reader = ThreadedStdinReader()
+        reader.start(asyncio.get_running_loop())
+        return reader
+    else:
+        # Unix/Mac: use connect_read_pipe (more efficient)
+        loop = asyncio.get_running_loop()
+        reader = asyncio.StreamReader()
+        protocol = asyncio.StreamReaderProtocol(reader)
+        await loop.connect_read_pipe(lambda: protocol, sys.stdin)
+        return reader
 
 
 async def run_relay(
