@@ -23,6 +23,10 @@ READY_MESSAGE: str = "ready\n"
 DEFAULT_RECONNECT_DELAY: float = 1.0  # seconds
 DEFAULT_MAX_RECONNECT_ATTEMPTS: int = 5
 
+# Stdin EOF retry settings
+DEFAULT_STDIN_EOF_RETRY_DELAY: float = 2.0  # seconds between EOF retry attempts
+DEFAULT_MAX_STDIN_EOF_RETRIES: int = 3  # max attempts before giving up on stdin EOF
+
 # Buffer sizes
 READ_BUFFER_SIZE: int = 65536  # 64KB read buffer
 
