@@ -81,6 +81,18 @@ class MapNode(BaseGameModel):
     children: list[tuple[int, int]] = Field(default_factory=list)
 
 
+class FloorHistory(BaseGameModel):
+    """A record of a visited node/floor in the current run.
+
+    Tracks the sequence of nodes visited during a run to provide context
+    about the path taken through the map.
+    """
+
+    floor: int
+    symbol: str
+    details: str | None = None
+
+
 class GameState(BaseGameModel):
     """Complete game state received from the bridge.
 

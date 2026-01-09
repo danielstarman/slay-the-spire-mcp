@@ -71,8 +71,8 @@ async def get_game_state(
 ) -> dict[str, Any] | None:
     """Get the current game state.
 
-    Returns the full game state including deck, relics, potions, and if in
-    combat, the current hand, monsters, and energy.
+    Returns the full game state including deck, relics, potions, floor history,
+    and if in combat, the current hand, monsters, and energy.
 
     Args:
         state_manager: The state manager to get state from
@@ -86,7 +86,13 @@ async def get_game_state(
         return None
 
     # Convert to dict using Pydantic's model_dump
-    return state.model_dump()
+    state_dict = state.model_dump()
+
+    # Add floor history
+    floor_history = state_manager.get_floor_history()
+    state_dict["floor_history"] = [entry.model_dump() for entry in floor_history]
+
+    return state_dict
 
 
 async def play_card(
