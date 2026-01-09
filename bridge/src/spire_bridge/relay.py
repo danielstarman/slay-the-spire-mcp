@@ -17,8 +17,10 @@ from typing import Protocol, TextIO
 from spire_bridge.protocol import (
     DEFAULT_HOST,
     DEFAULT_MAX_RECONNECT_ATTEMPTS,
+    DEFAULT_MAX_STDIN_EOF_RETRIES,
     DEFAULT_PORT,
     DEFAULT_RECONNECT_DELAY,
+    DEFAULT_STDIN_EOF_RETRY_DELAY,
     READY_MESSAGE,
     is_valid_message,
     normalize_line,
@@ -44,12 +46,15 @@ class Relay:
     3. Reads JSON lines from stdin (game state from SpireBridge mod)
     4. Relays each line to the TCP socket
     5. Handles connection errors gracefully with reconnection
+    6. Retries on stdin EOF before giving up (handles transient errors)
 
     Attributes:
         host: The TCP server host to connect to
         port: The TCP server port to connect to
         reconnect_delay: Seconds to wait between reconnect attempts
         max_reconnect_attempts: Maximum number of reconnect attempts
+        stdin_eof_retry_delay: Seconds to wait between stdin EOF retries
+        max_stdin_eof_retries: Maximum number of stdin EOF retry attempts
     """
 
     def __init__(
@@ -60,6 +65,8 @@ class Relay:
         stdout: TextIO | None = None,
         reconnect_delay: float = DEFAULT_RECONNECT_DELAY,
         max_reconnect_attempts: int = DEFAULT_MAX_RECONNECT_ATTEMPTS,
+        stdin_eof_retry_delay: float = DEFAULT_STDIN_EOF_RETRY_DELAY,
+        max_stdin_eof_retries: int = DEFAULT_MAX_STDIN_EOF_RETRIES,
     ) -> None:
         """Initialize the relay.
 
@@ -69,12 +76,16 @@ class Relay:
             stdout: The stdout stream to write to (defaults to sys.stdout)
             reconnect_delay: Seconds to wait between reconnect attempts
             max_reconnect_attempts: Maximum number of reconnect attempts
+            stdin_eof_retry_delay: Seconds to wait between stdin EOF retries
+            max_stdin_eof_retries: Maximum number of stdin EOF retry attempts
         """
         self.host = host
         self.port = port
         self._stdout: TextIO = stdout if stdout is not None else sys.stdout
         self.reconnect_delay = reconnect_delay
         self.max_reconnect_attempts = max_reconnect_attempts
+        self.stdin_eof_retry_delay = stdin_eof_retry_delay
+        self.max_stdin_eof_retries = max_stdin_eof_retries
 
         self._reader: StreamReader | None = None
         self._writer: StreamWriter | None = None
@@ -260,6 +271,59 @@ class Relay:
             self._reader = None
             logger.info("Connection closed")
 
+    async def _handle_stdin_with_retry(self, stdin: AsyncLineReader) -> None:
+        """Handle stdin reading with EOF retry logic.
+
+        Reads from stdin in a loop, retrying on EOF up to max_stdin_eof_retries times.
+        Resets retry counter on successful reads. Sends received data to TCP server.
+
+        Args:
+            stdin: The async stdin stream reader
+
+        Raises:
+            StopAsyncIteration: When EOF persists after max retries (signals shutdown)
+        """
+        stdin_eof_retries = 0
+
+        while True:
+            line_bytes = await stdin.readline()
+            if not line_bytes:
+                # EOF on stdin - could be transient or permanent
+                stdin_eof_retries += 1
+
+                if stdin_eof_retries > self.max_stdin_eof_retries:
+                    logger.info(
+                        "EOF on stdin persisted after %d retries, shutting down",
+                        self.max_stdin_eof_retries
+                    )
+                    raise StopAsyncIteration
+
+                logger.warning(
+                    "EOF on stdin (attempt %d/%d), retrying after %.1fs",
+                    stdin_eof_retries,
+                    self.max_stdin_eof_retries,
+                    self.stdin_eof_retry_delay
+                )
+
+                # Wait before retry
+                await asyncio.sleep(self.stdin_eof_retry_delay)
+
+                # If this is a ThreadedStdinReader, try to restart it
+                if isinstance(stdin, ThreadedStdinReader):
+                    if not stdin.is_running():
+                        stdin.restart()
+                    else:
+                        logger.warning("ThreadedStdinReader still running, cannot restart")
+
+                # Continue to retry readline
+                continue
+
+            # Successfully read data - reset retry counter
+            stdin_eof_retries = 0
+
+            line = line_bytes.decode("utf-8")
+            await self.send_to_server(line)
+
     async def run_tcp_to_stdout(self) -> None:
         """Run the TCP to stdout relay.
 
@@ -308,15 +372,10 @@ class Relay:
             return
 
         try:
-            while True:
-                line_bytes = await stdin.readline()
-                if not line_bytes:
-                    # EOF on stdin means mod closed, exit gracefully
-                    logger.info("EOF on stdin, shutting down")
-                    break
-
-                line = line_bytes.decode("utf-8")
-                await self.send_to_server(line)
+            await self._handle_stdin_with_retry(stdin)
+        except StopAsyncIteration:
+            # EOF persisted after retries, exit gracefully
+            logger.info("Stdin relay shutting down after exhausting retries")
         except asyncio.CancelledError:
             logger.info("Relay cancelled")
         finally:
@@ -342,15 +401,10 @@ class Relay:
         tcp_to_stdout_task = asyncio.create_task(self.run_tcp_to_stdout())
 
         try:
-            while True:
-                line_bytes = await stdin.readline()
-                if not line_bytes:
-                    # EOF on stdin means mod closed, exit gracefully
-                    logger.info("EOF on stdin, shutting down")
-                    break
-
-                line = line_bytes.decode("utf-8")
-                await self.send_to_server(line)
+            await self._handle_stdin_with_retry(stdin)
+        except StopAsyncIteration:
+            # EOF persisted after retries, exit gracefully
+            logger.info("Bidirectional relay shutting down after exhausting retries")
         except asyncio.CancelledError:
             logger.info("Relay cancelled")
         finally:
@@ -367,6 +421,8 @@ class ThreadedStdinReader:
     doesn't support `loop.connect_read_pipe()` for stdin. This class works
     around that limitation by using a daemon thread that performs blocking
     reads from stdin and puts lines into an asyncio-compatible queue.
+
+    The reader can be restarted after EOF or crashes to retry stdin reading.
     """
 
     def __init__(self) -> None:
@@ -374,6 +430,7 @@ class ThreadedStdinReader:
         self._queue: asyncio.Queue[bytes] = asyncio.Queue()
         self._thread: threading.Thread | None = None
         self._loop: asyncio.AbstractEventLoop | None = None
+        self._is_running = False
 
     def _reader_thread(self) -> None:
         """Background thread that reads from stdin and puts lines in queue.
@@ -381,6 +438,7 @@ class ThreadedStdinReader:
         This runs in a separate thread and performs blocking stdin reads.
         Each line is put into the asyncio queue in a thread-safe manner.
         """
+        self._is_running = True
         try:
             while True:
                 # Use stdin.buffer for binary reads (consistent with StreamReader)
@@ -401,6 +459,7 @@ class ThreadedStdinReader:
                 exc_info=True,
             )
         finally:
+            self._is_running = False
             # Signal EOF by putting empty bytes
             if self._loop is not None:
                 self._loop.call_soon_threadsafe(self._queue.put_nowait, b"")
@@ -412,6 +471,34 @@ class ThreadedStdinReader:
             loop: The asyncio event loop to use for queue operations
         """
         self._loop = loop
+        self._thread = threading.Thread(target=self._reader_thread, daemon=True)
+        self._thread.start()
+
+    def is_running(self) -> bool:
+        """Check if the reader thread is currently running.
+
+        Returns:
+            True if the thread is active and reading, False otherwise
+        """
+        return self._is_running
+
+    def restart(self) -> None:
+        """Restart the reader thread after EOF or crash.
+
+        Creates a new thread to retry stdin reading. The old thread
+        should have already exited (checked via is_running()).
+        """
+        if self._is_running:
+            logger.warning("Cannot restart ThreadedStdinReader while still running")
+            return
+
+        if self._loop is None:
+            logger.error("Cannot restart ThreadedStdinReader without event loop")
+            return
+
+        logger.info("Restarting ThreadedStdinReader")
+        # Create a fresh queue to avoid returning stale EOF markers or data
+        self._queue = asyncio.Queue()
         self._thread = threading.Thread(target=self._reader_thread, daemon=True)
         self._thread.start()
 

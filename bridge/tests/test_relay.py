@@ -541,3 +541,244 @@ class TestProtocolConstants:
     def test_default_port(self) -> None:
         """Default port is 7777."""
         assert DEFAULT_PORT == 7777
+
+
+# =============================================================================
+# Stdin EOF Retry Tests
+# =============================================================================
+
+
+class TestStdinEOFRetry:
+    """Tests for stdin EOF retry logic."""
+
+    async def test_stdin_eof_retries_then_recovers(
+        self, tcp_server: tuple[str, int, list[bytes]], mock_stdout: MagicMock
+    ) -> None:
+        """When stdin returns EOF temporarily, relay retries and recovers."""
+        host, port, received = tcp_server
+
+        # Create a mock stdin that returns EOF twice, then data
+        mock_stdin = AsyncMock()
+        eof_count = 0
+
+        async def mock_readline() -> bytes:
+            nonlocal eof_count
+            if eof_count < 2:
+                eof_count += 1
+                return b""  # EOF
+            elif eof_count == 2:
+                eof_count += 1
+                return b'{"type": "recovered"}\n'
+            else:
+                # Stay alive to allow test to complete
+                await asyncio.sleep(10)
+                return b""
+
+        mock_stdin.readline = mock_readline
+
+        relay = Relay(
+            host=host,
+            port=port,
+            stdout=mock_stdout,
+            stdin_eof_retry_delay=0.1,  # Fast retry for testing
+            max_stdin_eof_retries=3,
+        )
+
+        # Run relay in background
+        relay_task = asyncio.create_task(relay.run_bidirectional(mock_stdin))
+
+        # Wait for recovery and message
+        await asyncio.sleep(0.5)
+
+        # Cancel relay
+        relay_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await relay_task
+
+        # Verify the message was received after EOF retries
+        assert len(received) >= 1
+        assert b"recovered" in received[-1]
+
+    async def test_stdin_eof_gives_up_after_max_retries(
+        self, tcp_server: tuple[str, int, list[bytes]], mock_stdout: MagicMock
+    ) -> None:
+        """When stdin returns EOF persistently, relay gives up after max retries."""
+        host, port, received = tcp_server
+
+        # Create a mock stdin that always returns EOF
+        mock_stdin = AsyncMock()
+        mock_stdin.readline = AsyncMock(return_value=b"")
+
+        relay = Relay(
+            host=host,
+            port=port,
+            stdout=mock_stdout,
+            stdin_eof_retry_delay=0.1,  # Fast retry for testing
+            max_stdin_eof_retries=2,  # Low limit for faster test
+        )
+
+        # Run relay - should exit after retries
+        await relay.run_bidirectional(mock_stdin)
+
+        # Verify it tried multiple times (2 retries = 3 total calls)
+        # Initial read + 2 retries = 3 calls minimum
+        assert mock_stdin.readline.call_count >= 3
+
+    async def test_stdin_eof_resets_counter_on_success(
+        self, tcp_server: tuple[str, int, list[bytes]], mock_stdout: MagicMock
+    ) -> None:
+        """EOF retry counter resets after successful reads."""
+        host, port, received = tcp_server
+
+        # Create a mock stdin that alternates: EOF, data, EOF, data
+        mock_stdin = AsyncMock()
+        call_count = 0
+
+        async def mock_readline() -> bytes:
+            nonlocal call_count
+            call_count += 1
+            if call_count in [1, 3]:
+                return b""  # EOF on calls 1 and 3
+            elif call_count in [2, 4]:
+                return f'{{"type": "msg{call_count}"}}\n'.encode()
+            else:
+                # Stay alive
+                await asyncio.sleep(10)
+                return b""
+
+        mock_stdin.readline = mock_readline
+
+        relay = Relay(
+            host=host,
+            port=port,
+            stdout=mock_stdout,
+            stdin_eof_retry_delay=0.05,
+            max_stdin_eof_retries=1,  # Only 1 retry allowed
+        )
+
+        # Run relay in background
+        relay_task = asyncio.create_task(relay.run_bidirectional(mock_stdin))
+
+        # Wait for both messages
+        await asyncio.sleep(0.3)
+
+        # Cancel relay
+        relay_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await relay_task
+
+        # Both messages should have been received (counter was reset after first success)
+        assert len(received) >= 2
+        assert b"msg2" in received[0]
+        assert b"msg4" in received[1]
+
+    async def test_threaded_stdin_reader_restart(
+        self, tcp_server: tuple[str, int, list[bytes]], mock_stdout: MagicMock
+    ) -> None:
+        """ThreadedStdinReader can restart and successfully read after restart."""
+        from unittest.mock import Mock, patch
+        from spire_bridge.relay import ThreadedStdinReader
+
+        # Mock stdin to avoid pytest capture issues
+        mock_stdin_buffer = Mock()
+        call_count = 0
+
+        def mock_readline():
+            nonlocal call_count
+            call_count += 1
+            # First thread: return data then EOF
+            if call_count == 1:
+                return b'{"test": "first"}\n'
+            elif call_count == 2:
+                return b""  # EOF - causes thread to exit
+            # After restart: return different data then EOF
+            elif call_count == 3:
+                return b'{"test": "restarted"}\n'
+            else:
+                return b""  # EOF
+
+        mock_stdin_buffer.readline = mock_readline
+
+        with patch("sys.stdin") as mock_sys_stdin:
+            mock_sys_stdin.buffer = mock_stdin_buffer
+
+            # Create reader
+            reader = ThreadedStdinReader()
+            loop = asyncio.get_running_loop()
+
+            # Initially not running
+            assert not reader.is_running()
+
+            # Start the reader
+            reader.start(loop)
+
+            # Read first line
+            line1 = await reader.readline()
+            assert line1 == b'{"test": "first"}\n'
+
+            # Next readline gets EOF
+            eof1 = await reader.readline()
+            assert eof1 == b""
+
+            # Wait for thread to exit
+            await asyncio.sleep(0.2)
+            assert not reader.is_running()
+
+            # Restart the reader
+            reader.restart()
+
+            # Wait for new thread to start
+            await asyncio.sleep(0.1)
+
+            # Should be able to read from restarted reader
+            line2 = await reader.readline()
+            assert line2 == b'{"test": "restarted"}\n', f"Expected restarted data, got {line2}"
+
+            # Clean up
+            await asyncio.sleep(0.2)
+
+    async def test_stdin_relay_also_has_retry_logic(
+        self, tcp_server: tuple[str, int, list[bytes]], mock_stdout: MagicMock
+    ) -> None:
+        """run_stdin_relay (non-bidirectional) also has EOF retry logic."""
+        host, port, received = tcp_server
+
+        # Create a mock stdin that returns EOF once, then data
+        mock_stdin = AsyncMock()
+        call_count = 0
+
+        async def mock_readline() -> bytes:
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                return b""  # EOF
+            elif call_count == 2:
+                return b'{"type": "recovered"}\n'
+            else:
+                await asyncio.sleep(10)
+                return b""
+
+        mock_stdin.readline = mock_readline
+
+        relay = Relay(
+            host=host,
+            port=port,
+            stdout=mock_stdout,
+            stdin_eof_retry_delay=0.1,
+            max_stdin_eof_retries=2,
+        )
+
+        # Run relay in background
+        relay_task = asyncio.create_task(relay.run_stdin_relay(mock_stdin))
+
+        # Wait for recovery and message
+        await asyncio.sleep(0.3)
+
+        # Cancel relay
+        relay_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await relay_task
+
+        # Verify the message was received after EOF retry
+        assert len(received) >= 1
+        assert b"recovered" in received[-1]
