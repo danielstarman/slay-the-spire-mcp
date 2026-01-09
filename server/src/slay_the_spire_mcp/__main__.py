@@ -22,16 +22,26 @@ Legacy environment variables (deprecated, use STS_ prefix instead):
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import os
 import sys
+from functools import partial
+from typing import TYPE_CHECKING
 
+from mcp.server.fastmcp import Context
+from mcp.server.session import ServerSession
 from pydantic import ValidationError
 
-from slay_the_spire_mcp.config import Config, get_config, reset_config
-from slay_the_spire_mcp.mock import MockModeError, MockStateProvider
-from slay_the_spire_mcp.state import GameStateManager
+from slay_the_spire_mcp.config import Config, get_config, reset_config, set_config
+from slay_the_spire_mcp.mock import MockModeError
+from slay_the_spire_mcp.server import AppContext
+
+# Type alias for MCP Context with our AppContext - must be at module level
+# for FastMCP decorator to evaluate type annotations correctly
+MCPContext = Context[ServerSession, AppContext]
+
+if TYPE_CHECKING:
+    from mcp.server.fastmcp import FastMCP
 
 
 def _migrate_legacy_env_vars() -> None:
@@ -56,12 +66,16 @@ def _migrate_legacy_env_vars() -> None:
             os.environ[new_var] = legacy_value
 
 
-async def run_mock_mode(config: Config, state_manager: GameStateManager) -> int:
-    """Run the server in mock mode.
+def run_mock_server(config: Config) -> int:
+    """Run the MCP server in mock mode with HTTP transport.
+
+    This starts the FastMCP server with:
+    - Mock lifespan that loads fixtures instead of connecting to TCP
+    - Streamable HTTP transport for Claude Code connectivity
+    - All tools, resources, and prompts registered
 
     Args:
-        config: Application configuration
-        state_manager: GameStateManager to update with mock states
+        config: Application configuration with mock_mode=True
 
     Returns:
         Exit code (0 for success, non-zero for error)
@@ -69,33 +83,35 @@ async def run_mock_mode(config: Config, state_manager: GameStateManager) -> int:
     logger = logging.getLogger(__name__)
 
     try:
-        # Create mock provider from config
-        from pathlib import Path
+        # Import here to avoid circular imports and to allow lazy loading
+        from slay_the_spire_mcp.server import mock_lifespan
 
-        mock_provider = MockStateProvider(
-            state_manager=state_manager,
-            fixture_path=Path(config.mock_fixture) if config.mock_fixture else None,
-            delay_ms=config.mock_delay_ms,
+        # Create a mock-aware lifespan bound to our config
+        bound_lifespan = partial(mock_lifespan, config=config)
+
+        # Create a new FastMCP server with mock lifespan
+        # We need to recreate the server with the lifespan and re-register tools
+        from mcp.server.fastmcp import FastMCP
+
+        mock_server = FastMCP(
+            name="slay-the-spire",
+            host="127.0.0.1",
+            port=config.http_port,
+            log_level=config.log_level,
+            lifespan=bound_lifespan,
         )
 
-        await mock_provider.initialize()
+        # Register all tools, resources, and prompts on the mock server
+        _register_handlers(mock_server)
 
-        # Display the loaded state
-        current_state = state_manager.get_current_state()
-        if current_state:
-            logger.info(
-                f"Mock state loaded: floor={current_state.floor}, "
-                f"screen={current_state.screen_type}, "
-                f"hp={current_state.hp}/{current_state.max_hp}"
-            )
-            print("Mock state loaded successfully!")
-            print(f"  Floor: {current_state.floor}")
-            print(f"  Screen: {current_state.screen_type}")
-            print(f"  HP: {current_state.hp}/{current_state.max_hp}")
-            print(f"  Gold: {current_state.gold}")
-            print(f"  Deck size: {len(current_state.deck)}")
-        else:
-            logger.warning("No state loaded after mock initialization")
+        logger.info(
+            f"Starting MCP server in mock mode on http://127.0.0.1:{config.http_port}"
+        )
+        print(f"MCP server running at http://127.0.0.1:{config.http_port}/mcp")
+        print("Press Ctrl+C to stop.")
+
+        # Run the server with streamable-http transport
+        mock_server.run(transport="streamable-http")
 
         return 0
 
@@ -103,6 +119,320 @@ async def run_mock_mode(config: Config, state_manager: GameStateManager) -> int:
         logger.error(f"Mock mode error: {e}")
         print(f"Error: {e}", file=sys.stderr)
         return 1
+    except KeyboardInterrupt:
+        print("\nServer stopped.")
+        return 0
+    except Exception as e:
+        logger.error(f"Server error: {e}", exc_info=True)
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+
+
+def _register_handlers(server: FastMCP[AppContext]) -> None:
+    """Register all MCP tools, resources, and prompts on a server.
+
+    This duplicates the registrations from server.py but on a new server instance
+    configured with a different lifespan.
+
+    Args:
+        server: FastMCP server instance to register handlers on
+    """
+    import json
+
+    from slay_the_spire_mcp import prompts as prompt_impl
+    from slay_the_spire_mcp import resources as resource_impl
+    from slay_the_spire_mcp import tools as tool_impl
+
+    # ==============================================================================
+    # MCP Tool Registration
+    # ==============================================================================
+
+    @server.tool()
+    async def get_game_state(
+        ctx: MCPContext,
+    ) -> str:
+        """Get the current game state.
+
+        Returns the full game state including deck, relics, potions, and if in
+        combat, the current hand, monsters, and energy.
+
+        Returns:
+            JSON string of the current game state, or a message if no state exists.
+        """
+        app_ctx = ctx.request_context.lifespan_context
+        # In mock mode, tcp_listener is None, so we pass it but the tool handles it
+        result = await tool_impl.get_game_state(
+            app_ctx.state_manager, app_ctx.tcp_listener
+        )
+        if result is None:
+            return json.dumps(
+                {"status": "no_state", "message": "No game state available"}
+            )
+        return json.dumps(result)
+
+    @server.tool()
+    async def play_card(
+        ctx: MCPContext,
+        card_index: int,
+        target_index: int | None = None,
+    ) -> str:
+        """Play a card from hand.
+
+        Plays the card at the specified index in the player's hand. If the card
+        requires a target (like Strike), provide the target_index of the monster.
+
+        Args:
+            card_index: Index of the card in hand (0-indexed)
+            target_index: Index of the target monster (0-indexed), if required
+
+        Returns:
+            JSON string with success status and optional error message.
+        """
+        app_ctx = ctx.request_context.lifespan_context
+        if app_ctx.tcp_listener is None:
+            return json.dumps(
+                {
+                    "success": False,
+                    "error": "Cannot play cards in mock mode (no bridge connection)",
+                }
+            )
+        try:
+            result = await tool_impl.play_card(
+                app_ctx.state_manager, app_ctx.tcp_listener, card_index, target_index
+            )
+            return json.dumps(result)
+        except tool_impl.ToolError as e:
+            return json.dumps({"success": False, "error": str(e)})
+
+    @server.tool()
+    async def end_turn(
+        ctx: MCPContext,
+    ) -> str:
+        """End the current turn.
+
+        Ends the player's turn in combat, allowing monsters to act.
+
+        Returns:
+            JSON string with success status and optional error message.
+        """
+        app_ctx = ctx.request_context.lifespan_context
+        if app_ctx.tcp_listener is None:
+            return json.dumps(
+                {
+                    "success": False,
+                    "error": "Cannot end turn in mock mode (no bridge connection)",
+                }
+            )
+        try:
+            result = await tool_impl.end_turn(
+                app_ctx.state_manager, app_ctx.tcp_listener
+            )
+            return json.dumps(result)
+        except tool_impl.ToolError as e:
+            return json.dumps({"success": False, "error": str(e)})
+
+    @server.tool()
+    async def choose(
+        ctx: MCPContext,
+        choice: int | str,
+    ) -> str:
+        """Make a choice.
+
+        Selects an option from a choice screen such as card rewards, event options,
+        shop items, etc. Can specify the choice by index or name.
+
+        Args:
+            choice: Index of the choice (0-indexed) or name of the choice
+
+        Returns:
+            JSON string with success status and optional error message.
+        """
+        app_ctx = ctx.request_context.lifespan_context
+        if app_ctx.tcp_listener is None:
+            return json.dumps(
+                {
+                    "success": False,
+                    "error": "Cannot make choices in mock mode (no bridge connection)",
+                }
+            )
+        try:
+            result = await tool_impl.choose(
+                app_ctx.state_manager, app_ctx.tcp_listener, choice
+            )
+            return json.dumps(result)
+        except tool_impl.ToolError as e:
+            return json.dumps({"success": False, "error": str(e)})
+
+    @server.tool()
+    async def potion(
+        ctx: MCPContext,
+        action: str,
+        slot: int,
+        target_index: int | None = None,
+    ) -> str:
+        """Use or discard a potion.
+
+        Uses or discards the potion at the specified slot. Some potions require
+        a target when used (like Fire Potion).
+
+        Args:
+            action: Either "use" or "discard"
+            slot: Index of the potion slot (0-indexed)
+            target_index: Index of the target monster (0-indexed), if required
+
+        Returns:
+            JSON string with success status and optional error message.
+        """
+        app_ctx = ctx.request_context.lifespan_context
+        if app_ctx.tcp_listener is None:
+            return json.dumps(
+                {
+                    "success": False,
+                    "error": "Cannot use potions in mock mode (no bridge connection)",
+                }
+            )
+        try:
+            result = await tool_impl.potion(
+                app_ctx.state_manager, app_ctx.tcp_listener, action, slot, target_index
+            )
+            return json.dumps(result)
+        except tool_impl.ToolError as e:
+            return json.dumps({"success": False, "error": str(e)})
+
+    # ==============================================================================
+    # MCP Resource Registration
+    # ==============================================================================
+
+    @server.resource("game://state")
+    def game_state_resource(
+        ctx: MCPContext,
+    ) -> str:
+        """Current full game state.
+
+        Returns the complete game state as received from the bridge including
+        all player stats, deck, relics, potions, and combat state if in combat.
+        """
+        app_ctx = ctx.request_context.lifespan_context
+        result = resource_impl.get_state_resource(app_ctx.state_manager)
+        if result is None:
+            return json.dumps(
+                {"status": "no_state", "message": "No game state available"}
+            )
+        return json.dumps(result)
+
+    @server.resource("game://player")
+    def game_player_resource(
+        ctx: MCPContext,
+    ) -> str:
+        """Player stats including HP, gold, deck, and relics.
+
+        Returns player-specific information including current HP, max HP,
+        gold, deck contents, relics, and potions.
+        """
+        app_ctx = ctx.request_context.lifespan_context
+        result = resource_impl.get_player_resource(app_ctx.state_manager)
+        if result is None:
+            return json.dumps(
+                {"status": "no_state", "message": "No game state available"}
+            )
+        return json.dumps(result)
+
+    @server.resource("game://combat")
+    def game_combat_resource(
+        ctx: MCPContext,
+    ) -> str:
+        """Current combat state including monsters, hand, and energy.
+
+        Returns combat-specific information including monster stats and intents,
+        current hand, energy, and draw/discard pile information. Returns null
+        status if not currently in combat.
+        """
+        app_ctx = ctx.request_context.lifespan_context
+        result = resource_impl.get_combat_resource(app_ctx.state_manager)
+        if result is None:
+            return json.dumps(
+                {"status": "not_in_combat", "message": "Not currently in combat"}
+            )
+        return json.dumps(result)
+
+    @server.resource("game://map")
+    def game_map_resource(
+        ctx: MCPContext,
+    ) -> str:
+        """Current map and path options.
+
+        Returns map information including node layout, current position,
+        and available paths. Returns null status if no map is available.
+        """
+        app_ctx = ctx.request_context.lifespan_context
+        result = resource_impl.get_map_resource(app_ctx.state_manager)
+        if result is None:
+            return json.dumps({"status": "no_map", "message": "No map data available"})
+        return json.dumps(result)
+
+    # ==============================================================================
+    # MCP Prompt Registration
+    # ==============================================================================
+
+    @server.prompt()
+    def analyze_combat(
+        ctx: MCPContext,
+    ) -> str:
+        """Analyze the current combat situation.
+
+        Provides structured context about the current combat including hand,
+        energy, monsters, and strategic guidance for turn planning.
+        """
+        app_ctx = ctx.request_context.lifespan_context
+        state = app_ctx.state_manager.get_current_state()
+        if state is None:
+            return "No game state available. Cannot analyze combat."
+        return prompt_impl.analyze_combat(state)
+
+    @server.prompt()
+    def evaluate_card_reward(
+        ctx: MCPContext,
+    ) -> str:
+        """Evaluate card reward choices.
+
+        Provides structured context about available card choices, current deck
+        composition, and strategic guidance for card selection.
+        """
+        app_ctx = ctx.request_context.lifespan_context
+        state = app_ctx.state_manager.get_current_state()
+        if state is None:
+            return "No game state available. Cannot evaluate card reward."
+        return prompt_impl.evaluate_card_reward(state)
+
+    @server.prompt()
+    def plan_path(
+        ctx: MCPContext,
+    ) -> str:
+        """Plan the map path.
+
+        Provides structured context about available path options, current HP,
+        resources, and strategic guidance for route selection.
+        """
+        app_ctx = ctx.request_context.lifespan_context
+        state = app_ctx.state_manager.get_current_state()
+        if state is None:
+            return "No game state available. Cannot plan path."
+        return prompt_impl.plan_path(state)
+
+    @server.prompt()
+    def evaluate_event(
+        ctx: MCPContext,
+    ) -> str:
+        """Evaluate event options.
+
+        Provides structured context about event choices, current resources,
+        and risk/reward analysis for event decisions.
+        """
+        app_ctx = ctx.request_context.lifespan_context
+        state = app_ctx.state_manager.get_current_state()
+        if state is None:
+            return "No game state available. Cannot evaluate event."
+        return prompt_impl.evaluate_event(state)
 
 
 def main() -> int:
@@ -122,6 +452,9 @@ def main() -> int:
     # Setup logging from config
     config.setup_logging()
 
+    # Set the config singleton so the lifespan can access it
+    set_config(config)
+
     print("Slay the Spire MCP Server v0.1.0")
     print("Configuration:")
     print(f"  TCP: {config.tcp_host}:{config.tcp_port}")
@@ -131,8 +464,7 @@ def main() -> int:
 
     if config.mock_mode:
         print(f"  Mock mode: enabled (fixture: {config.mock_fixture})")
-        state_manager = GameStateManager()
-        return asyncio.run(run_mock_mode(config, state_manager))
+        return run_mock_server(config)
 
     # Normal mode - not yet implemented
     print("Server not yet implemented.")

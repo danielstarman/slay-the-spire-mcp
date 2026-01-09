@@ -14,13 +14,12 @@ services:
       # Bridge TCP connection
       - "7777:7777"
     environment:
-      # MCP server configuration
-      - MCP_HOST=0.0.0.0
-      - MCP_PORT=8000
-      - BRIDGE_HOST=0.0.0.0
-      - BRIDGE_PORT=7777
-      # Optional: WebSocket connection to mod overlay
-      - OVERLAY_WS_URL=ws://host.docker.internal:31337
+      # Server configuration (STS_ prefix required)
+      - STS_TCP_HOST=0.0.0.0
+      - STS_TCP_PORT=7777
+      - STS_HTTP_PORT=8000
+      - STS_WS_PORT=31337
+      - STS_LOG_LEVEL=INFO
     volumes:
       # Mount shared schemas for reference
       - ./shared:/app/shared:ro
@@ -31,6 +30,34 @@ services:
       retries: 3
     restart: unless-stopped
 
+  # Mock mode server - for development without the game
+  server-mock:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: slay-the-spire-mcp-mock
+    ports:
+      - "8000:8000"
+    environment:
+      - STS_TCP_HOST=0.0.0.0
+      - STS_HTTP_PORT=8000
+      - STS_LOG_LEVEL=DEBUG
+      - STS_MOCK_MODE=true
+      - STS_MOCK_FIXTURE=/app/fixtures
+    volumes:
+      - ./tests/fixtures/game_states:/app/fixtures:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.socket(); s.connect(('localhost', 8000)); s.close()"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    profiles:
+      - mock
+
 # Note: The bridge process is NOT containerized
 # It runs on the host machine as a subprocess of the SpireBridge mod
 # and connects to the server container via TCP on port 7777
+#
+# Usage:
+#   Production mode (needs game): docker-compose up server
+#   Mock mode (no game needed):   docker-compose --profile mock up server-mock

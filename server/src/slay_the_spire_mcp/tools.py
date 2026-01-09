@@ -67,7 +67,7 @@ def _check_in_combat(state: GameState) -> None:
 
 async def get_game_state(
     state_manager: GameStateManager,
-    tcp_listener: TCPListener,  # noqa: ARG001 - kept for API consistency
+    tcp_listener: TCPListener | None,  # noqa: ARG001 - kept for API consistency
 ) -> dict[str, Any] | None:
     """Get the current game state.
 

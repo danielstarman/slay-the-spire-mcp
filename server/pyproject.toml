@@ -83,6 +83,10 @@ warn_unused_ignores = true
 module = ["mcp.*"]
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = ["slay_the_spire_mcp.__main__"]
+disallow_untyped_decorators = false
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]

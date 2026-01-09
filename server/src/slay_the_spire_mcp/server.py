@@ -100,6 +100,62 @@ async def app_lifespan(
             logger.info("TCP listener stopped")
 
 
+@asynccontextmanager
+async def mock_lifespan(
+    server: FastMCP,  # noqa: ARG001 - Required by FastMCP lifespan signature
+    config: Config | None = None,
+) -> AsyncIterator[AppContext]:
+    """Manage application lifecycle for mock mode.
+
+    This context manager:
+    1. Creates a GameStateManager on startup
+    2. Initializes MockStateProvider with fixtures
+    3. Yields AppContext for tools/resources to access (tcp_listener is None)
+
+    Args:
+        server: FastMCP server instance (required by lifespan protocol)
+        config: Application configuration (must have mock_mode=True and mock_fixture set)
+
+    Yields:
+        AppContext containing state_manager (with loaded state), None tcp_listener, and config
+    """
+    from pathlib import Path
+
+    from slay_the_spire_mcp.mock import MockStateProvider
+
+    # Use provided config or get from singleton
+    cfg = config if config is not None else get_config()
+
+    # Create state manager
+    state_manager = GameStateManager()
+    logger.info("GameStateManager initialized (mock mode)")
+
+    # Create and initialize mock provider
+    mock_provider = MockStateProvider(
+        state_manager=state_manager,
+        fixture_path=Path(cfg.mock_fixture) if cfg.mock_fixture else None,
+        delay_ms=cfg.mock_delay_ms,
+    )
+
+    await mock_provider.initialize()
+    logger.info(f"Mock state provider initialized from {cfg.mock_fixture}")
+
+    # Log the loaded state
+    current_state = state_manager.get_current_state()
+    if current_state:
+        logger.info(
+            f"Mock state loaded: floor={current_state.floor}, "
+            f"screen={current_state.screen_type}, "
+            f"hp={current_state.hp}/{current_state.max_hp}"
+        )
+
+    yield AppContext(
+        state_manager=state_manager,
+        tcp_listener=None,  # No TCP listener in mock mode
+        config=cfg,
+    )
+
+
 def create_mcp_server() -> FastMCP:
     """Create and configure the FastMCP server.
 
