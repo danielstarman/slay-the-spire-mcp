@@ -50,16 +50,7 @@ uv sync
 
 This creates a virtual environment and installs all dependencies (mcp, pydantic, websockets, etc.).
 
-### 3. Install the Bridge
-
-The bridge relays communication between the game mod and the MCP server.
-
-```bash
-cd bridge
-uv sync
-```
-
-### 4. Install SpireBridge Mod
+### 3. Install SpireBridge Mod
 
 > **Status**: The SpireBridge mod is currently in development. These are placeholder instructions.
 
@@ -100,8 +91,9 @@ uv run python -m slay_the_spire_mcp
 
 The server starts on:
 - **HTTP (MCP)**: port 8000
-- **TCP (Bridge)**: port 7777
 - **WebSocket (Overlay)**: port 31337
+
+> **Note**: With `STS_STDIN_MODE=true`, the server reads directly from stdin instead of TCP. This is used when the mod spawns the server directly.
 
 ### Option B: Docker (Recommended for Production)
 

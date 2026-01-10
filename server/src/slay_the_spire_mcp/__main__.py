@@ -77,6 +77,105 @@ def _migrate_legacy_env_vars() -> None:
             os.environ[new_var] = legacy_value
 
 
+def run_stdin_server(config: Config) -> int:
+    """Run the MCP server in stdin mode (unified process).
+
+    This mode:
+    - Reads game state from stdin
+    - Writes commands to stdout
+    - Serves MCP over HTTP (NOT stdio - stdout is for game)
+    - Sends 'ready\\n' on startup per CommunicationMod protocol
+
+    Args:
+        config: Application configuration with stdin_mode=True
+
+    Returns:
+        Exit code (0 for success, non-zero for error)
+    """
+    import asyncio
+
+    logger = logging.getLogger(__name__)
+
+    async def run_with_stdin_listener() -> int:
+        """Async wrapper that starts stdin listener then runs MCP server."""
+        from slay_the_spire_mcp.stdin_io import StdinListener
+
+        state_manager = GameStateManager()
+        stdin_listener = StdinListener(state_manager)
+
+        # Register terminal display callback
+        state_manager.on_state_change(_create_terminal_display_callback())
+
+        # Create run context and commentary engine
+        run_context = RunContext()
+        commentary_engine = CommentaryEngine(run_context)
+        commentary_engine.on_commentary_generated(_create_commentary_callback())
+        state_manager.on_state_change(commentary_engine.on_state_change)
+
+        try:
+            # Start stdin listener (sends "ready\n")
+            await stdin_listener.start()
+            logger.info("Stdin listener started")
+
+            # Set pre-initialized context
+            set_pre_initialized_context(
+                PreInitializedContext(
+                    state_manager=state_manager,
+                    tcp_listener=stdin_listener,  # Type: StdinListener implements GameListener
+                    config=config,
+                    commentary_engine=commentary_engine,
+                )
+            )
+
+            # Create a lifespan bound to our config
+            bound_lifespan = partial(app_lifespan, config=config)
+
+            # Create a new FastMCP server with app lifespan
+            from mcp.server.fastmcp import FastMCP
+
+            server = FastMCP(
+                name="slay-the-spire",
+                host=config.tcp_host,
+                port=config.http_port,
+                log_level=config.log_level,
+                lifespan=bound_lifespan,
+            )
+
+            # Register all tools, resources, and prompts on the server
+            _register_handlers(server)
+
+            # Note: Must use HTTP, not stdio (stdout is for game commands)
+            logger.info(
+                f"Starting MCP server on http://{config.tcp_host}:{config.http_port}"
+            )
+            # Log to stderr - stdout is reserved for game commands
+            print(
+                f"MCP server running at http://{config.tcp_host}:{config.http_port}/mcp",
+                file=sys.stderr,
+            )
+
+            await server.run_streamable_http_async()
+
+            return 0
+
+        finally:
+            # Clean up pre-initialized context
+            set_pre_initialized_context(None)
+
+            # Stop stdin listener on shutdown
+            await stdin_listener.stop()
+
+    try:
+        return asyncio.run(run_with_stdin_listener())
+
+    except KeyboardInterrupt:
+        return 0
+    except Exception as e:
+        logger.error(f"Server error: {e}", exc_info=True)
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+
+
 def run_mock_server(config: Config) -> int:
     """Run the MCP server in mock mode.
 
@@ -717,6 +816,10 @@ def main() -> int:
     print(f"  WebSocket: {config.ws_port}", file=out)
     print(f"  Log level: {config.log_level}", file=out)
     print(f"  Transport: {config.transport}", file=out)
+
+    if config.stdin_mode:
+        print("  Stdin mode: enabled (unified process)", file=out)
+        return run_stdin_server(config)
 
     if config.mock_mode:
         print(f"  Mock mode: enabled (fixture: {config.mock_fixture})", file=out)

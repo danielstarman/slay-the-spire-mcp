@@ -99,6 +99,12 @@ class Config(BaseSettings):
         description="MCP transport type: 'http' for streamable-http, 'stdio' for stdio",
     )
 
+    # Stdin mode configuration
+    stdin_mode: bool = Field(
+        default=False,
+        description="Enable stdin mode for direct CommunicationMod connection (no TCP relay)",
+    )
+
     # Mock mode configuration
     mock_mode: bool = Field(
         default=False,
@@ -132,6 +138,23 @@ class Config(BaseSettings):
             )
         return self
 
+    @model_validator(mode="after")
+    def validate_stdin_mode(self) -> Config:
+        """Validate that stdin_mode is not used with stdio transport.
+
+        stdin_mode uses stdout for game commands (CommunicationMod protocol).
+        stdio transport uses stdout for MCP JSON-RPC protocol.
+        These are mutually exclusive - use HTTP transport with stdin_mode.
+        """
+        if self.stdin_mode and self.transport == "stdio":
+            raise ValueError(
+                "Cannot use stdin_mode with stdio transport. "
+                "stdin_mode uses stdout for game commands; "
+                "stdio transport uses stdout for MCP protocol. "
+                "Use stdin_mode with http transport instead."
+            )
+        return self
+
     def setup_logging(self) -> None:
         """Configure logging based on config settings."""
         logging.basicConfig(
@@ -152,6 +175,7 @@ class Config(BaseSettings):
             "ws_port": self.ws_port,
             "log_level": self.log_level,
             "transport": self.transport,
+            "stdin_mode": self.stdin_mode,
             "mock_mode": self.mock_mode,
             "mock_fixture": self.mock_fixture,
             "mock_delay_ms": self.mock_delay_ms,

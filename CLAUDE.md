@@ -39,18 +39,6 @@ uv run ruff format src               # Format code
 uv run python -m slay_the_spire_mcp  # Run the MCP server directly
 ```
 
-### Bridge (bridge/)
-
-```bash
-cd bridge
-uv sync                              # Install/sync dependencies
-uv run python -m pytest              # Run tests
-uv run python -m mypy src            # Type checking
-uv run ruff check src                # Lint
-uv run ruff format src               # Format code
-uv run python -m spire_bridge        # Run the bridge directly
-```
-
 ### Root-Level Tests (tests/)
 
 ```bash
@@ -404,9 +392,6 @@ slay-the-spire-mcp/
 ├── mod/                   # Java mod for Slay the Spire
 │   ├── pom.xml            # Maven build
 │   └── src/               # Java source
-├── bridge/                # Python relay bridge
-│   ├── pyproject.toml     # Bridge dependencies (minimal)
-│   └── src/spire_bridge/  # Bridge source
 ├── server/                # MCP server (main Python package)
 │   ├── pyproject.toml     # Server dependencies (mcp, pydantic, websockets)
 │   └── src/slay_the_spire_mcp/
@@ -425,4 +410,6 @@ slay-the-spire-mcp/
     └── integration/       # Cross-component tests
 ```
 
-Each Python package (bridge/, server/) has its own virtual environment and pyproject.toml.
+The server package has its own virtual environment and pyproject.toml.
+
+**Stdin Mode**: Set `STS_STDIN_MODE=true` to run without TCP - the server reads game state directly from stdin and writes commands to stdout. This is used when CommunicationMod spawns the server directly.

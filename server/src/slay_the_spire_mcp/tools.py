@@ -14,6 +14,7 @@ from typing import Any
 
 from slay_the_spire_mcp.models import GameState
 from slay_the_spire_mcp.state import GameStateManager, TCPListener
+from slay_the_spire_mcp.stdin_io import StdinListener
 
 
 class ToolError(Exception):
@@ -67,7 +68,7 @@ def _check_in_combat(state: GameState) -> None:
 
 async def get_game_state(
     state_manager: GameStateManager,
-    tcp_listener: TCPListener | None,  # noqa: ARG001 - kept for API consistency
+    tcp_listener: TCPListener | StdinListener | None,  # noqa: ARG001 - kept for API consistency
 ) -> dict[str, Any] | None:
     """Get the current game state.
 
@@ -105,7 +106,7 @@ async def get_game_state(
 
 async def play_card(
     state_manager: GameStateManager,
-    tcp_listener: TCPListener,
+    tcp_listener: TCPListener | StdinListener,
     card_index: int,
     target_index: int | None = None,
 ) -> dict[str, Any]:
@@ -160,7 +161,7 @@ async def play_card(
 
 async def end_turn(
     state_manager: GameStateManager,
-    tcp_listener: TCPListener,
+    tcp_listener: TCPListener | StdinListener,
 ) -> dict[str, Any]:
     """End the current turn.
 
@@ -190,7 +191,7 @@ async def end_turn(
 
 async def choose(
     state_manager: GameStateManager,
-    tcp_listener: TCPListener,
+    tcp_listener: TCPListener | StdinListener,
     choice: int | str,
 ) -> dict[str, Any]:
     """Make a choice.
@@ -236,7 +237,7 @@ async def choose(
 
 async def potion(
     state_manager: GameStateManager,
-    tcp_listener: TCPListener,
+    tcp_listener: TCPListener | StdinListener,
     action: str,
     slot: int,
     target_index: int | None = None,

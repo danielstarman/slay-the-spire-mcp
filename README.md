@@ -31,13 +31,7 @@ This is an **advisory co-pilot**, not an AI that plays for you. You make all dec
 │  │ play_card  │  │ subscribe  │  │            │  │           │ │
 │  └────────────┘  └────────────┘  └────────────┘  └───────────┘ │
 │                                                                  │
-│  Bridge Handler (TCP :7777)     Overlay Pusher (WS :31337)      │
-└──────────────────┬──────────────────────────────────────────────┘
-                   │ TCP localhost:7777
-                   ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    Bridge Process (Python)                       │
-│    Launched by mod as subprocess, relays game state via TCP      │
+│  Stdin Reader (stdin mode)      Overlay Pusher (WS :31337)      │
 └──────────────────┬──────────────────────────────────────────────┘
                    │ stdin/stdout (JSON)
                    ▼
@@ -47,7 +41,7 @@ This is an **advisory co-pilot**, not an AI that plays for you. You make all dec
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**Data Flow**: Game state flows up (Game -> Mod -> Bridge -> MCP Server -> Claude), analysis flows down.
+**Data Flow**: Game state flows up (Game -> Mod -> MCP Server -> Claude), analysis flows down.
 
 ## Quick Start
 
@@ -72,13 +66,7 @@ This is an **advisory co-pilot**, not an AI that plays for you. You make all dec
    uv sync
    ```
 
-3. **Install the bridge (optional, for testing):**
-   ```bash
-   cd bridge
-   uv sync
-   ```
-
-4. **Install SpireBridge mod:**
+3. **Install SpireBridge mod:**
    - Copy the SpireBridge mod JAR to your Slay the Spire mods folder
    - Enable it in ModTheSpire
 
@@ -193,12 +181,6 @@ slay-the-spire-mcp/
 │   │   ├── detection.py    # Decision point detection
 │   │   └── mock.py         # Mock mode for testing
 │   └── pyproject.toml
-├── bridge/                 # Python relay process
-│   ├── src/spire_bridge/
-│   │   ├── __main__.py     # Entry point
-│   │   ├── relay.py        # stdin/stdout <-> TCP relay
-│   │   └── protocol.py     # Message framing
-│   └── pyproject.toml
 ├── mod/                    # SpireBridge Java mod (WIP)
 ├── tests/                  # Integration tests
 │   └── fixtures/           # Sample game states
@@ -212,10 +194,6 @@ slay-the-spire-mcp/
 ```bash
 # Server tests
 cd server
-uv run python -m pytest
-
-# Bridge tests
-cd bridge
 uv run python -m pytest
 
 # Integration tests (from root)
@@ -238,25 +216,15 @@ uv run ruff format src         # Format code
 | server | `uv sync` | Install dependencies |
 | server | `uv run python -m slay_the_spire_mcp` | Run server |
 | server | `uv run python -m pytest` | Run tests |
-| bridge | `uv sync` | Install dependencies |
-| bridge | `uv run python -m spire_bridge` | Run bridge |
-| bridge | `uv run python -m pytest` | Run tests |
 
 ## Troubleshooting
 
 ### "No game state available"
 
-The MCP server hasn't received any game state from the bridge. Check:
+The MCP server hasn't received any game state from the game. Check:
 1. Is Slay the Spire running with the SpireBridge mod?
-2. Is the bridge process connected to the MCP server?
-3. Check logs: `STS_LOG_LEVEL=DEBUG uv run python -m slay_the_spire_mcp`
-
-### Connection Refused on Port 7777
-
-The MCP server isn't listening for bridge connections:
-1. Ensure the server is running
-2. Check if another process is using port 7777
-3. Try a different port: `STS_TCP_PORT=7778 uv run python -m slay_the_spire_mcp`
+2. Is the server receiving game state? Check logs with `STS_LOG_LEVEL=DEBUG`
+3. Try navigating to a new room to trigger a state update
 
 ### Mock Mode Errors
 
@@ -280,8 +248,8 @@ Currently in **MVP development**. The foundation supports:
 - Terminal output (MVP)
 
 Coming soon:
-- In-game overlay rendering
-- Full bridge integration
+- In-game overlay rendering via WebSocket push
+- Claude API integration for autonomous advice
 - SpireBridge mod completion
 
 ## License

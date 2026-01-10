@@ -11,7 +11,7 @@ services:
     ports:
       # MCP Streamable HTTP transport
       - "8000:8000"
-      # Bridge TCP connection
+      # TCP connection for game (when not using stdin mode)
       - "7777:7777"
     environment:
       # Server configuration (STS_ prefix required)
@@ -54,9 +54,11 @@ services:
     profiles:
       - mock
 
-# Note: The bridge process is NOT containerized
-# It runs on the host machine as a subprocess of the SpireBridge mod
-# and connects to the server container via TCP on port 7777
+# Note: When running in Docker, use TCP mode (the default)
+# The mod connects to the server container via TCP on port 7777
+#
+# For local development, you can use stdin mode instead:
+#   STS_STDIN_MODE=true - server reads from stdin, no TCP needed
 #
 # Usage:
 #   Production mode (needs game): docker-compose up server

@@ -33,7 +33,7 @@ STS_LOG_LEVEL=DEBUG uv run python -m slay_the_spire_mcp
 
 **Symptom**: Claude reports no game state, or `get_game_state` returns empty/null.
 
-**Cause**: The MCP server hasn't received any game state from the bridge.
+**Cause**: The MCP server hasn't received any game state from the game.
 
 **Solutions**:
 
@@ -41,8 +41,8 @@ STS_LOG_LEVEL=DEBUG uv run python -m slay_the_spire_mcp
    - Is Slay the Spire running?
    - Is the SpireBridge mod enabled in ModTheSpire?
 
-2. **Check if the bridge is connected**:
-   - Look for "Bridge connected" in server logs
+2. **Check if the game is connected**:
+   - Look for "connected" in server logs
    - Run with `STS_LOG_LEVEL=DEBUG` for detailed connection info
 
 3. **Verify the game is in a state that sends data**:
@@ -59,14 +59,13 @@ STS_LOG_LEVEL=DEBUG uv run python -m slay_the_spire_mcp
 
 **Symptom**: Claude mentions state might be outdated.
 
-**Cause**: The bridge connection was lost or hasn't sent updates recently.
+**Cause**: The game connection was lost or hasn't sent updates recently.
 
 **Solutions**:
 
 1. Check if the game is still running
-2. Check if the bridge process is still running
-3. The game may be in a transitional state (loading, animations)
-4. Navigate to a new room to trigger a state update
+2. The game may be in a transitional state (loading, animations)
+3. Navigate to a new room to trigger a state update
 
 ### "Address already in use" on Port 7777
 
@@ -228,21 +227,6 @@ uv run python -m slay_the_spire_mcp
 2. **Check mod dependencies** (BaseMod must be installed)
 3. **Check ModTheSpire logs** for errors
 4. **Verify JAR is in correct location** (see [Installation Guide](installation.md))
-
-### Bridge Process Not Starting
-
-**Symptom**: Game runs, mod loads, but bridge doesn't connect.
-
-**Solutions**:
-
-1. **Check mod configuration** for bridge path
-2. **Verify Python is in PATH**
-3. **Check mod logs** for subprocess errors
-4. **Try running bridge manually**:
-   ```bash
-   cd bridge
-   uv run python -m spire_bridge
-   ```
 
 ---
 

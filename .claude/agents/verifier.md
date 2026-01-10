@@ -41,6 +41,8 @@ Your job: Review implementation with high standards. This is NOT a rubber stamp.
 - [ ] **GitHub issues accurate** — Relevant issues commented/closed? New issues created for discovered work?
 - [ ] **CLAUDE.md current** — Any new conventions or patterns documented?
 - [ ] **Code comments match behavior** — Docstrings accurate for changed functions?
+- [ ] **No stale references** — If code was deleted/renamed, search for orphaned references in docs, comments, and tests. Use: `grep -r "old_name" docs/ CLAUDE.md README.md`
+- [ ] **User docs match reality** — Do installation.md, configuration.md, troubleshooting.md reflect the current architecture?
 
 ## Decision Points
 
@@ -50,9 +52,21 @@ After review, choose ONE:
 2. **Complexity issues found** → Use Task tool to spawn `refactor` agent → After refactor, YOU review again
 3. **All checks pass** → Report "Ship it!" to main thread AND clean up the plan file (see below)
 
-## Plan File Cleanup (On Ship It!)
+## Plan File Cleanup (On Ship It!) — MANDATORY
 
-When you approve with "Ship it!", you MUST also:
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  CRITICAL: "Ship it!" is NOT complete until you do ALL of these:       │
+│                                                                         │
+│  1. Extract value from plan → docs/architecture-decisions.md           │
+│  2. DELETE the plan file (rm .claude/plans/*.md)                       │
+│  3. VERIFY deletion (ls .claude/plans/ shows no leftover files)        │
+│                                                                         │
+│  If you skip this, stale plans accumulate and mislead future work.     │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+When you approve with "Ship it!", you MUST:
 
 1. **Extract any long-term value** from the plan file:
    - Key decisions/rationale → `docs/architecture-decisions.md`
@@ -64,7 +78,14 @@ When you approve with "Ship it!", you MUST also:
    rm .claude/plans/<feature>-spec.md
    ```
 
+3. **Verify deletion**:
+   ```bash
+   ls .claude/plans/  # Should show NO files for this feature
+   ```
+
 Plans are temporary working documents. Once implementation is verified, they should not linger. The permanent record lives in `docs/` and `CLAUDE.md`.
+
+**FAILURE MODE**: The verifier previously said "Ship it!" without deleting plans, causing stale documentation. Don't repeat this mistake.
 
 ## Critical Rule
 
@@ -76,3 +97,22 @@ Never let main thread declare victory without your final approval on the *actual
 
 - **Do NOT fix issues yourself** — spawn the appropriate agent
 - **Do NOT skip the re-verification** — always review after fixes
+- **Do NOT say "Ship it!" without completing cleanup** — plan deletion is part of approval
+- **Do NOT ignore doc updates** — if code changes, docs must match
+
+## Major Refactors Checklist
+
+When reviewing changes that delete or rename significant code (packages, modules, classes):
+
+1. **Search for orphaned references**:
+   ```bash
+   grep -r "deleted_name" docs/ CLAUDE.md README.md *.yml
+   ```
+
+2. **Check import statements** in remaining code
+
+3. **Verify test references** don't point to deleted code
+
+4. **Update architecture diagrams** if they exist
+
+5. **Flag any TODOs** that reference the deleted code

@@ -31,6 +31,7 @@ from slay_the_spire_mcp.config import Config, get_config
 from slay_the_spire_mcp.detection import DecisionType, detect_decision_point
 from slay_the_spire_mcp.models import GameState
 from slay_the_spire_mcp.state import GameStateManager, TCPListener
+from slay_the_spire_mcp.stdin_io import StdinListener
 from slay_the_spire_mcp.terminal import Colors, render_game_state
 
 logger = logging.getLogger(__name__)
@@ -43,15 +44,15 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class PreInitializedContext:
-    """Holds pre-initialized state_manager and tcp_listener.
+    """Holds pre-initialized state_manager and game listener.
 
-    This allows the TCP listener to be started BEFORE the MCP server runs,
-    ensuring port 7777 is listening immediately on startup rather than
+    This allows the listener (TCP or stdin) to be started BEFORE the MCP server runs,
+    ensuring the connection is ready immediately on startup rather than
     waiting for the first MCP request to trigger the lifespan.
     """
 
     state_manager: GameStateManager
-    tcp_listener: TCPListener | None
+    tcp_listener: TCPListener | StdinListener | None  # GameListener implementations
     config: Config
     commentary_engine: CommentaryEngine | None = None
 
@@ -187,13 +188,13 @@ class AppContext:
 
     Attributes:
         state_manager: GameStateManager instance that maintains current game state
-        tcp_listener: TCPListener instance for receiving state from bridge (may be None)
+        tcp_listener: Listener for game I/O (TCPListener or StdinListener, may be None)
         config: Application configuration
         commentary_engine: CommentaryEngine for auto-commentary (may be None)
     """
 
     state_manager: GameStateManager
-    tcp_listener: TCPListener | None
+    tcp_listener: TCPListener | StdinListener | None  # GameListener implementations
     config: Config
     commentary_engine: CommentaryEngine | None = None
 
