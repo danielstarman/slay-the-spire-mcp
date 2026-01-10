@@ -280,7 +280,8 @@ async def mock_lifespan(
     1. Creates a GameStateManager on startup
     2. Initializes MockStateProvider with fixtures
     3. Optionally registers commentary engine for auto-analysis
-    4. Yields AppContext for tools/resources to access (tcp_listener is None)
+    4. Optionally starts OverlayPusher for pushing to mod overlay
+    5. Yields AppContext for tools/resources to access (tcp_listener is None)
 
     Args:
         server: FastMCP server instance (required by lifespan protocol)
@@ -293,6 +294,7 @@ async def mock_lifespan(
     from pathlib import Path
 
     from slay_the_spire_mcp.mock import MockStateProvider
+    from slay_the_spire_mcp.overlay import OverlayPusher
 
     # Use provided config or get from singleton
     cfg = config if config is not None else get_config()
@@ -309,6 +311,32 @@ async def mock_lifespan(
     if commentary_engine is not None:
         state_manager.on_state_change(commentary_engine.on_state_change)
         logger.info("Commentary engine registered as state callback (mock mode)")
+
+    # Create and start overlay pusher if enabled
+    overlay_pusher: OverlayPusher | None = None
+    if cfg.overlay_enabled:
+        overlay_pusher = OverlayPusher(
+            host=cfg.overlay_host,
+            port=cfg.overlay_port,
+            reconnect_delay_ms=cfg.overlay_reconnect_delay_ms,
+            enabled=cfg.overlay_enabled,
+        )
+        await overlay_pusher.start()
+        logger.info(
+            f"Overlay pusher started (mock mode), connecting to "
+            f"ws://{cfg.overlay_host}:{cfg.overlay_port}"
+        )
+
+        # Register overlay pusher callbacks if commentary engine exists
+        if commentary_engine is not None:
+            commentary_engine.on_commentary_generated(
+                overlay_pusher.on_commentary_generated
+            )
+            logger.info("Overlay pusher registered as commentary callback (mock mode)")
+
+        # Register overlay pusher for clearing on state changes
+        state_manager.on_state_change(overlay_pusher.on_state_change)
+        logger.info("Overlay pusher registered as state callback (mock mode)")
 
     # Create and initialize mock provider
     mock_provider = MockStateProvider(
@@ -329,12 +357,18 @@ async def mock_lifespan(
             f"hp={current_state.hp}/{current_state.max_hp}"
         )
 
-    yield AppContext(
-        state_manager=state_manager,
-        tcp_listener=None,  # No TCP listener in mock mode
-        config=cfg,
-        commentary_engine=commentary_engine,
-    )
+    try:
+        yield AppContext(
+            state_manager=state_manager,
+            tcp_listener=None,  # No TCP listener in mock mode
+            config=cfg,
+            commentary_engine=commentary_engine,
+        )
+    finally:
+        # Stop overlay pusher on shutdown
+        if overlay_pusher is not None:
+            await overlay_pusher.stop()
+            logger.info("Overlay pusher stopped (mock mode)")
 
 
 def create_mcp_server() -> FastMCP:

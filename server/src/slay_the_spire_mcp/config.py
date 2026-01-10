@@ -13,6 +13,10 @@ Environment Variables:
     STS_WS_PORT: WebSocket port for overlay (default: 31337)
     STS_LOG_LEVEL: Logging level (default: INFO)
     STS_MOCK_MODE: Enable mock mode (default: false)
+    STS_OVERLAY_ENABLED: Enable WebSocket push to mod overlay (default: true)
+    STS_OVERLAY_HOST: Host for mod WebSocket server (default: 127.0.0.1)
+    STS_OVERLAY_PORT: Port for mod WebSocket server (default: 7778)
+    STS_OVERLAY_RECONNECT_DELAY_MS: Delay between reconnection attempts (default: 2000)
 
 Usage:
     from slay_the_spire_mcp.config import get_config, Config
@@ -120,6 +124,28 @@ class Config(BaseSettings):
         description="Delay between states in mock sequence replay (milliseconds)",
     )
 
+    # Overlay configuration
+    overlay_enabled: bool = Field(
+        default=True,
+        description="Enable WebSocket push to mod overlay",
+    )
+    overlay_host: str = Field(
+        default="127.0.0.1",
+        description="Host for mod WebSocket server",
+    )
+    overlay_port: int = Field(
+        default=7778,
+        ge=1,
+        le=65535,
+        description="Port for mod WebSocket server (default 7778)",
+    )
+    overlay_reconnect_delay_ms: int = Field(
+        default=2000,
+        ge=100,
+        le=30000,
+        description="Delay between reconnection attempts (milliseconds)",
+    )
+
     @field_validator("log_level", mode="before")
     @classmethod
     def normalize_log_level(cls, v: Any) -> Any:
@@ -179,6 +205,10 @@ class Config(BaseSettings):
             "mock_mode": self.mock_mode,
             "mock_fixture": self.mock_fixture,
             "mock_delay_ms": self.mock_delay_ms,
+            "overlay_enabled": self.overlay_enabled,
+            "overlay_host": self.overlay_host,
+            "overlay_port": self.overlay_port,
+            "overlay_reconnect_delay_ms": self.overlay_reconnect_delay_ms,
         }
 
 

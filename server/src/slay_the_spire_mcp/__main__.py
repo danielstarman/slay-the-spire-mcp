@@ -37,6 +37,7 @@ from slay_the_spire_mcp.commentary import CommentaryEngine
 from slay_the_spire_mcp.config import Config, get_config, reset_config, set_config
 from slay_the_spire_mcp.context import RunContext
 from slay_the_spire_mcp.mock import MockModeError
+from slay_the_spire_mcp.overlay import OverlayPusher
 from slay_the_spire_mcp.server import (
     AppContext,
     PreInitializedContext,
@@ -102,6 +103,7 @@ def run_stdin_server(config: Config) -> int:
 
         state_manager = GameStateManager()
         stdin_listener = StdinListener(state_manager)
+        overlay_pusher: OverlayPusher | None = None
 
         # Register terminal display callback
         state_manager.on_state_change(_create_terminal_display_callback())
@@ -111,6 +113,25 @@ def run_stdin_server(config: Config) -> int:
         commentary_engine = CommentaryEngine(run_context)
         commentary_engine.on_commentary_generated(_create_commentary_callback())
         state_manager.on_state_change(commentary_engine.on_state_change)
+
+        # Create and start overlay pusher if enabled
+        if config.overlay_enabled:
+            overlay_pusher = OverlayPusher(
+                host=config.overlay_host,
+                port=config.overlay_port,
+                reconnect_delay_ms=config.overlay_reconnect_delay_ms,
+                enabled=config.overlay_enabled,
+            )
+            await overlay_pusher.start()
+            logger.info(
+                f"Overlay pusher started, connecting to ws://{config.overlay_host}:{config.overlay_port}"
+            )
+
+            # Register overlay pusher callbacks
+            commentary_engine.on_commentary_generated(
+                overlay_pusher.on_commentary_generated
+            )
+            state_manager.on_state_change(overlay_pusher.on_state_change)
 
         try:
             # Start stdin listener (sends "ready\n")
@@ -161,6 +182,11 @@ def run_stdin_server(config: Config) -> int:
         finally:
             # Clean up pre-initialized context
             set_pre_initialized_context(None)
+
+            # Stop overlay pusher on shutdown
+            if overlay_pusher is not None:
+                await overlay_pusher.stop()
+                logger.info("Overlay pusher stopped")
 
             # Stop stdin listener on shutdown
             await stdin_listener.stop()
@@ -268,8 +294,8 @@ def run_mock_server(config: Config) -> int:
 
 async def _start_tcp_listener(
     config: Config,
-) -> tuple[GameStateManager, TCPListener, CommentaryEngine]:
-    """Start the TCP listener and commentary engine before the MCP server.
+) -> tuple[GameStateManager, TCPListener, CommentaryEngine, OverlayPusher | None]:
+    """Start the TCP listener, commentary engine, and overlay pusher before the MCP server.
 
     This ensures port 7777 is listening immediately on startup,
     not waiting for the first MCP request.
@@ -278,7 +304,7 @@ async def _start_tcp_listener(
         config: Application configuration
 
     Returns:
-        Tuple of (state_manager, tcp_listener, commentary_engine)
+        Tuple of (state_manager, tcp_listener, commentary_engine, overlay_pusher)
     """
     logger = logging.getLogger(__name__)
 
@@ -303,6 +329,30 @@ async def _start_tcp_listener(
     state_manager.on_state_change(commentary_engine.on_state_change)
     logger.info("Commentary engine registered as state callback")
 
+    # Create and start overlay pusher if enabled
+    overlay_pusher: OverlayPusher | None = None
+    if config.overlay_enabled:
+        overlay_pusher = OverlayPusher(
+            host=config.overlay_host,
+            port=config.overlay_port,
+            reconnect_delay_ms=config.overlay_reconnect_delay_ms,
+            enabled=config.overlay_enabled,
+        )
+        await overlay_pusher.start()
+        logger.info(
+            f"Overlay pusher started, connecting to ws://{config.overlay_host}:{config.overlay_port}"
+        )
+
+        # Register overlay pusher as commentary callback
+        commentary_engine.on_commentary_generated(
+            overlay_pusher.on_commentary_generated
+        )
+        logger.info("Overlay pusher registered as commentary callback")
+
+        # Register overlay pusher as state change callback (for clearing)
+        state_manager.on_state_change(overlay_pusher.on_state_change)
+        logger.info("Overlay pusher registered as state callback")
+
     # Create and start TCP listener
     tcp_listener = TCPListener(
         state_manager, host=config.tcp_host, port=config.tcp_port
@@ -310,7 +360,7 @@ async def _start_tcp_listener(
     await tcp_listener.start()
     logger.info(f"TCP listener started on {config.tcp_host}:{config.tcp_port}")
 
-    return state_manager, tcp_listener, commentary_engine
+    return state_manager, tcp_listener, commentary_engine, overlay_pusher
 
 
 async def _stop_tcp_listener(tcp_listener: TCPListener) -> None:
@@ -356,12 +406,16 @@ def run_server(config: Config) -> int:
         state_manager: GameStateManager | None = None
         tcp_listener: TCPListener | None = None
         commentary_engine: CommentaryEngine | None = None
+        overlay_pusher: OverlayPusher | None = None
 
         try:
             # Start TCP listener first
-            state_manager, tcp_listener, commentary_engine = await _start_tcp_listener(
-                config
-            )
+            (
+                state_manager,
+                tcp_listener,
+                commentary_engine,
+                overlay_pusher,
+            ) = await _start_tcp_listener(config)
 
             # Set the pre-initialized context so app_lifespan can use it
             set_pre_initialized_context(
@@ -416,6 +470,11 @@ def run_server(config: Config) -> int:
         finally:
             # Clean up pre-initialized context
             set_pre_initialized_context(None)
+
+            # Stop overlay pusher on shutdown
+            if overlay_pusher is not None:
+                await overlay_pusher.stop()
+                logger.info("Overlay pusher stopped")
 
             # Stop TCP listener on shutdown
             if tcp_listener is not None:
