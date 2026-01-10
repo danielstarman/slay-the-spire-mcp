@@ -26,8 +26,9 @@ from mcp.server.session import ServerSession
 from slay_the_spire_mcp import prompts as prompt_impl
 from slay_the_spire_mcp import resources as resource_impl
 from slay_the_spire_mcp import tools as tool_impl
+from slay_the_spire_mcp.commentary import CommentaryEngine
 from slay_the_spire_mcp.config import Config, get_config
-from slay_the_spire_mcp.detection import detect_decision_point
+from slay_the_spire_mcp.detection import DecisionType, detect_decision_point
 from slay_the_spire_mcp.models import GameState
 from slay_the_spire_mcp.state import GameStateManager, TCPListener
 from slay_the_spire_mcp.terminal import Colors, render_game_state
@@ -52,6 +53,7 @@ class PreInitializedContext:
     state_manager: GameStateManager
     tcp_listener: TCPListener | None
     config: Config
+    commentary_engine: CommentaryEngine | None = None
 
 
 # Module-level holder for pre-initialized context
@@ -139,6 +141,43 @@ def _create_terminal_display_callback() -> Callable[[GameState], None]:
     return display_state_change
 
 
+def _create_commentary_callback() -> Callable[[str, DecisionType], None]:
+    """Create callback to display commentary to terminal.
+
+    Returns:
+        A callback function that prints commentary to stderr with nice formatting.
+    """
+
+    def display_commentary(commentary: str, decision_type: DecisionType) -> None:
+        """Display generated commentary to terminal via stderr.
+
+        Args:
+            commentary: The generated commentary text
+            decision_type: The type of decision this commentary is for
+        """
+        try:
+            print(file=sys.stderr)  # Blank line before commentary
+            print(SEPARATOR, file=sys.stderr)
+            print(
+                f"{Colors.CYAN}[ANALYSIS READY]{Colors.RESET} "
+                f"{Colors.BOLD}{decision_type.value}{Colors.RESET}",
+                file=sys.stderr,
+            )
+            print(SEPARATOR, file=sys.stderr)
+            print(file=sys.stderr)
+            # Print commentary (could be multi-line)
+            print(commentary, file=sys.stderr)
+            print(file=sys.stderr)
+            print(SEPARATOR, file=sys.stderr)
+            print(file=sys.stderr)  # Extra blank line for readability
+
+        except Exception as e:
+            # Log errors but don't crash - this is a display callback
+            logger.error(f"Error in commentary display callback: {e}", exc_info=True)
+
+    return display_commentary
+
+
 @dataclass
 class AppContext:
     """Application context shared across MCP server lifecycle.
@@ -150,11 +189,13 @@ class AppContext:
         state_manager: GameStateManager instance that maintains current game state
         tcp_listener: TCPListener instance for receiving state from bridge (may be None)
         config: Application configuration
+        commentary_engine: CommentaryEngine for auto-commentary (may be None)
     """
 
     state_manager: GameStateManager
     tcp_listener: TCPListener | None
     config: Config
+    commentary_engine: CommentaryEngine | None = None
 
 
 # Type alias for MCP Context with our AppContext
@@ -190,6 +231,7 @@ async def app_lifespan(
             state_manager=pre_ctx.state_manager,
             tcp_listener=pre_ctx.tcp_listener,
             config=pre_ctx.config,
+            commentary_engine=pre_ctx.commentary_engine,
         )
         # Don't stop TCP listener here - caller handles shutdown
         return
@@ -229,17 +271,20 @@ async def app_lifespan(
 async def mock_lifespan(
     server: FastMCP,  # noqa: ARG001 - Required by FastMCP lifespan signature
     config: Config | None = None,
+    commentary_engine: CommentaryEngine | None = None,
 ) -> AsyncIterator[AppContext]:
     """Manage application lifecycle for mock mode.
 
     This context manager:
     1. Creates a GameStateManager on startup
     2. Initializes MockStateProvider with fixtures
-    3. Yields AppContext for tools/resources to access (tcp_listener is None)
+    3. Optionally registers commentary engine for auto-analysis
+    4. Yields AppContext for tools/resources to access (tcp_listener is None)
 
     Args:
         server: FastMCP server instance (required by lifespan protocol)
         config: Application configuration (must have mock_mode=True and mock_fixture set)
+        commentary_engine: Optional CommentaryEngine for auto-commentary
 
     Yields:
         AppContext containing state_manager (with loaded state), None tcp_listener, and config
@@ -258,6 +303,11 @@ async def mock_lifespan(
     # Register terminal display callback
     state_manager.on_state_change(_create_terminal_display_callback())
     logger.info("Terminal display callback registered (mock mode)")
+
+    # Register commentary engine as state change callback if provided
+    if commentary_engine is not None:
+        state_manager.on_state_change(commentary_engine.on_state_change)
+        logger.info("Commentary engine registered as state callback (mock mode)")
 
     # Create and initialize mock provider
     mock_provider = MockStateProvider(
@@ -282,6 +332,7 @@ async def mock_lifespan(
         state_manager=state_manager,
         tcp_listener=None,  # No TCP listener in mock mode
         config=cfg,
+        commentary_engine=commentary_engine,
     )
 
 
@@ -528,6 +579,50 @@ def game_map_resource(
     if result is None:
         return json.dumps({"status": "no_map", "message": "No map data available"})
     return json.dumps(result)
+
+
+@mcp.resource("game://commentary")
+def game_commentary_resource(
+    ctx: MCPContext,
+) -> str:
+    """Latest decision point analysis.
+
+    Returns the cached analysis for the current decision point.
+    Subscribe to this resource for automatic updates when new analysis is available.
+
+    Returns:
+        JSON object with status and analysis if available:
+        - status: "ready" if commentary exists, "no_commentary" if none
+        - decision_type: Type of decision (CARD_REWARD, EVENT, etc.)
+        - analysis: The generated analysis text
+    """
+    app_ctx = ctx.request_context.lifespan_context
+
+    if app_ctx.commentary_engine is None:
+        return json.dumps(
+            {
+                "status": "no_commentary",
+                "message": "Commentary engine not initialized",
+            }
+        )
+
+    commentary, decision_type = app_ctx.commentary_engine.get_cached_commentary()
+
+    if commentary is None:
+        return json.dumps(
+            {
+                "status": "no_commentary",
+                "message": "No decision point detected yet",
+            }
+        )
+
+    return json.dumps(
+        {
+            "status": "ready",
+            "decision_type": decision_type.value if decision_type else None,
+            "analysis": commentary,
+        }
+    )
 
 
 # ==============================================================================

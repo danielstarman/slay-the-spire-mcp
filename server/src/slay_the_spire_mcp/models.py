@@ -280,7 +280,11 @@ def parse_game_state_from_message(message: dict[str, Any]) -> GameState | None:
                         raw_children = node.get("children", [])
                         children: list[tuple[int, int]] = []
                         for child in raw_children:
-                            if isinstance(child, dict) and "x" in child and "y" in child:
+                            if (
+                                isinstance(child, dict)
+                                and "x" in child
+                                and "y" in child
+                            ):
                                 children.append((child["x"], child["y"]))
                         parsed_row.append(
                             MapNode(
@@ -311,7 +315,11 @@ def parse_game_state_from_message(message: dict[str, Any]) -> GameState | None:
     # CommunicationMod sends it as {"x": 3, "y": 0}, we need tuple (3, 0)
     current_node: tuple[int, int] | None = None
     raw_current_node = screen_state.get("current_node")
-    if isinstance(raw_current_node, dict) and "x" in raw_current_node and "y" in raw_current_node:
+    if (
+        isinstance(raw_current_node, dict)
+        and "x" in raw_current_node
+        and "y" in raw_current_node
+    ):
         try:
             current_node = (raw_current_node["x"], raw_current_node["y"])
         except (TypeError, KeyError) as e:

@@ -365,6 +365,303 @@ Recommend a specific choice with detailed reasoning."""
     return prompt
 
 
+def evaluate_shop(state: GameState) -> str:
+    """Generate a prompt for evaluating shop purchases.
+
+    Provides structured context about:
+    - Available items with prices
+    - Current gold and deck
+    - Purge availability
+    - Strategic guidance for purchases
+
+    Args:
+        state: Current game state with shop information
+
+    Returns:
+        A structured prompt string for shop evaluation
+    """
+    # Get shop items from screen_state
+    shop_cards = state.screen_state.get("cards", [])
+    shop_relics = state.screen_state.get("relics", [])
+    shop_potions = state.screen_state.get("potions", [])
+    can_purge = state.screen_state.get("can_purge", False)
+    purge_cost = state.screen_state.get("purge_cost", 0)
+
+    # Build items section
+    items_lines = []
+
+    if shop_cards:
+        items_lines.append("Cards:")
+        for card in shop_cards:
+            name = card.get("name", "Unknown")
+            cost = card.get("price", card.get("cost", 0))
+            items_lines.append(f"  - {name} ({cost}g)")
+
+    if shop_relics:
+        items_lines.append("Relics:")
+        for relic in shop_relics:
+            name = relic.get("name", "Unknown")
+            cost = relic.get("price", relic.get("cost", 0))
+            items_lines.append(f"  - {name} ({cost}g)")
+
+    if shop_potions:
+        items_lines.append("Potions:")
+        for potion in shop_potions:
+            name = potion.get("name", "Unknown")
+            cost = potion.get("price", potion.get("cost", 0))
+            items_lines.append(f"  - {name} ({cost}g)")
+
+    items_section = "\n".join(items_lines) if items_lines else "  No items available"
+
+    # Deck summary
+    deck_size = len(state.deck)
+    attack_count = sum(1 for c in state.deck if c.type == "ATTACK")
+    skill_count = sum(1 for c in state.deck if c.type == "SKILL")
+    power_count = sum(1 for c in state.deck if c.type == "POWER")
+
+    # Build relic context
+    relic_names = [r.name for r in state.relics] if state.relics else []
+    relics_str = ", ".join(relic_names) if relic_names else "None"
+
+    # Calculate HP percentage
+    hp_percent = (state.hp / state.max_hp * 100) if state.max_hp > 0 else 0
+
+    prompt = f"""## Shop Evaluation
+
+### Current Resources
+- Gold: {state.gold}
+- HP: {state.hp}/{state.max_hp} ({hp_percent:.0f}%)
+- Floor: {state.floor}
+- Act: {state.act}
+
+### Available Items
+{items_section}
+
+### Card Removal
+- Available: {"Yes" if can_purge else "No"}
+- Cost: {purge_cost}g
+
+### Deck Summary
+- Total Cards: {deck_size}
+- Attacks: {attack_count}
+- Skills: {skill_count}
+- Powers: {power_count}
+
+### Current Relics
+{relics_str}
+
+---
+
+## Analysis Request
+
+Please evaluate the shop options and recommend purchases. Consider:
+
+1. **Budget**: With {state.gold} gold, what can we afford?
+2. **Deck Needs**: What does our deck lack that the shop could provide?
+3. **Card Removal**: Should we prioritize removing a Strike/Defend?
+4. **Relic Value**: Are any relics worth the investment?
+5. **Potion Utility**: Do we need potions for upcoming challenges?
+6. **Save Gold**: Is it better to save gold for a future shop?
+
+Recommend specific purchases with priority order and reasoning."""
+
+    return prompt
+
+
+def evaluate_campfire(state: GameState) -> str:
+    """Generate a prompt for evaluating campfire/rest site options.
+
+    Provides structured context about:
+    - Current HP and healing value
+    - Upgradeable cards in deck
+    - Other campfire options (lift, dig, recall, etc.)
+    - Strategic guidance for rest site decisions
+
+    Args:
+        state: Current game state at rest site
+
+    Returns:
+        A structured prompt string for campfire evaluation
+    """
+    # Get rest options from choice_list or screen_state
+    rest_options = list(state.choice_list)
+    if not rest_options:
+        rest_options = state.screen_state.get("rest_options", [])
+
+    # Calculate healing value (rest heals 30% of max HP)
+    heal_amount = int(state.max_hp * 0.3)
+    hp_after_rest = min(state.max_hp, state.hp + heal_amount)
+
+    # Calculate HP percentage
+    hp_percent = (state.hp / state.max_hp * 100) if state.max_hp > 0 else 0
+
+    # Find upgradeable cards (not already upgraded)
+    upgradeable_cards = [c for c in state.deck if c.upgrades == 0]
+
+    # Key upgrade targets
+    upgrade_priorities = []
+    for card in upgradeable_cards:
+        # Highlight high-value upgrade targets
+        if card.name in ["Bash", "Neutralize", "Eruption", "Zap"]:
+            upgrade_priorities.append(f"{card.name} (starter - high priority)")
+        elif card.type == "POWER":
+            upgrade_priorities.append(f"{card.name} (power - good target)")
+        elif card.type == "ATTACK" and card.cost >= 2:
+            upgrade_priorities.append(f"{card.name} (high-cost attack)")
+
+    upgrade_section = (
+        "\n".join(f"  - {c}" for c in upgrade_priorities[:5])
+        if upgrade_priorities
+        else "  No notable upgrade targets"
+    )
+
+    # Build relic context
+    relic_names = [r.name for r in state.relics] if state.relics else []
+    relics_str = ", ".join(relic_names) if relic_names else "None"
+
+    # Check for relevant relics
+    has_regal_pillow = any(r.name == "Regal Pillow" for r in state.relics)
+    has_dream_catcher = any(r.name == "Dream Catcher" for r in state.relics)
+
+    relic_notes = []
+    if has_regal_pillow:
+        relic_notes.append("Regal Pillow: Rest heals 15 extra HP")
+    if has_dream_catcher:
+        relic_notes.append("Dream Catcher: Rest adds card to deck")
+
+    relic_note_str = (
+        "\n".join(relic_notes) if relic_notes else "No rest-affecting relics"
+    )
+
+    prompt = f"""## Campfire Evaluation
+
+### Available Options
+{chr(10).join(f"  - {opt}" for opt in rest_options)}
+
+### HP Status
+- Current HP: {state.hp}/{state.max_hp} ({hp_percent:.0f}%)
+- Heal Amount: {heal_amount} HP (rest)
+- HP After Rest: {hp_after_rest}/{state.max_hp}
+
+### Upgrade Candidates
+{upgrade_section}
+- Total upgradeable cards: {len(upgradeable_cards)}
+
+### Rest Site Relics
+{relic_note_str}
+
+### Run Position
+- Floor: {state.floor}
+- Act: {state.act}
+
+### Current Relics
+{relics_str}
+
+---
+
+## Analysis Request
+
+Please evaluate the campfire options and recommend the best choice. Consider:
+
+1. **HP Threshold**: At {hp_percent:.0f}% HP, do we need to heal?
+2. **Upgrade Value**: Would upgrading a key card increase our win rate more than healing?
+3. **Upcoming Challenges**: Is the next fight an elite or boss?
+4. **Relic Synergies**: Do any relics affect our decision?
+5. **Act Progress**: How far into the act are we?
+6. **Deck State**: Does our deck need an upgrade to function?
+
+Recommend a specific choice with detailed reasoning."""
+
+    return prompt
+
+
+def evaluate_boss_relic(state: GameState) -> str:
+    """Generate a prompt for evaluating boss relic choices.
+
+    Provides structured context about:
+    - Available boss relics with descriptions
+    - Current deck and relics
+    - Strategic guidance for relic selection
+
+    Args:
+        state: Current game state at boss relic selection
+
+    Returns:
+        A structured prompt string for boss relic evaluation
+    """
+    # Get relic options from screen_state
+    relic_options = state.screen_state.get("relics", [])
+
+    # Build relic choices section
+    relic_lines = []
+    for i, relic in enumerate(relic_options):
+        name = relic.get("name", "Unknown")
+        desc = relic.get("description", "No description available")
+        relic_lines.append(f"  {i + 1}. {name}")
+        relic_lines.append(f"     {desc}")
+
+    relics_section = "\n".join(relic_lines) if relic_lines else "  No relics available"
+
+    # Deck summary
+    deck_size = len(state.deck)
+    attack_count = sum(1 for c in state.deck if c.type == "ATTACK")
+    skill_count = sum(1 for c in state.deck if c.type == "SKILL")
+    power_count = sum(1 for c in state.deck if c.type == "POWER")
+
+    # Current relics
+    current_relic_names = [r.name for r in state.relics] if state.relics else []
+    current_relics_str = (
+        ", ".join(current_relic_names) if current_relic_names else "None"
+    )
+
+    # Calculate HP percentage
+    hp_percent = (state.hp / state.max_hp * 100) if state.max_hp > 0 else 0
+
+    # Count potions
+    potion_count = sum(1 for p in state.potions if p.name != "Potion Slot")
+    potion_slots = len(state.potions)
+
+    prompt = f"""## Boss Relic Selection
+
+### Available Boss Relics
+{relics_section}
+
+### Option to Skip
+You can skip the boss relic if none are beneficial.
+
+### Current Status
+- HP: {state.hp}/{state.max_hp} ({hp_percent:.0f}%)
+- Gold: {state.gold}
+- Floor: {state.floor}
+- Potions: {potion_count}/{potion_slots} slots filled
+
+### Deck Summary
+- Total Cards: {deck_size}
+- Attacks: {attack_count}
+- Skills: {skill_count}
+- Powers: {power_count}
+
+### Current Relics
+{current_relics_str}
+
+---
+
+## Analysis Request
+
+Please evaluate the boss relic options and recommend the best choice. Consider:
+
+1. **Relic Synergy**: How does each relic work with our current deck/relics?
+2. **Downside Assessment**: What are the risks of each relic's downside?
+3. **Future Value**: Which relic provides the most value for the rest of the run?
+4. **Skip Option**: Is skipping better than taking a harmful relic?
+5. **Act Transition**: We're entering a new act - what challenges lie ahead?
+6. **Build Direction**: Does a relic push us toward a specific strategy?
+
+Recommend a specific choice with detailed reasoning."""
+
+    return prompt
+
+
 def _format_deck_contents(deck: list[Card]) -> str:
     """Format deck contents for display.
 

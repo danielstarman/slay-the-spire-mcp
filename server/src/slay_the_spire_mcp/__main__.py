@@ -33,11 +33,14 @@ from mcp.server.fastmcp import Context
 from mcp.server.session import ServerSession
 from pydantic import ValidationError
 
+from slay_the_spire_mcp.commentary import CommentaryEngine
 from slay_the_spire_mcp.config import Config, get_config, reset_config, set_config
+from slay_the_spire_mcp.context import RunContext
 from slay_the_spire_mcp.mock import MockModeError
 from slay_the_spire_mcp.server import (
     AppContext,
     PreInitializedContext,
+    _create_commentary_callback,
     _create_terminal_display_callback,
     app_lifespan,
     set_pre_initialized_context,
@@ -81,6 +84,7 @@ def run_mock_server(config: Config) -> int:
     - Mock lifespan that loads fixtures instead of connecting to TCP
     - Configurable transport (HTTP or stdio)
     - All tools, resources, and prompts registered
+    - Commentary engine for auto-analysis
 
     Args:
         config: Application configuration with mock_mode=True
@@ -97,8 +101,19 @@ def run_mock_server(config: Config) -> int:
         # Import here to avoid circular imports and to allow lazy loading
         from slay_the_spire_mcp.server import mock_lifespan
 
-        # Create a mock-aware lifespan bound to our config
-        bound_lifespan = partial(mock_lifespan, config=config)
+        # Create run context and commentary engine for mock mode
+        run_context = RunContext()
+        commentary_engine = CommentaryEngine(run_context)
+        logger.info("CommentaryEngine initialized (mock mode)")
+
+        # Register commentary callback (displays to terminal)
+        commentary_engine.on_commentary_generated(_create_commentary_callback())
+        logger.info("Commentary terminal display callback registered (mock mode)")
+
+        # Create a mock-aware lifespan bound to our config and commentary engine
+        bound_lifespan = partial(
+            mock_lifespan, config=config, commentary_engine=commentary_engine
+        )
 
         # Create a new FastMCP server with mock lifespan
         # We need to recreate the server with the lifespan and re-register tools
@@ -152,8 +167,10 @@ def run_mock_server(config: Config) -> int:
         return 1
 
 
-async def _start_tcp_listener(config: Config) -> tuple[GameStateManager, TCPListener]:
-    """Start the TCP listener before the MCP server.
+async def _start_tcp_listener(
+    config: Config,
+) -> tuple[GameStateManager, TCPListener, CommentaryEngine]:
+    """Start the TCP listener and commentary engine before the MCP server.
 
     This ensures port 7777 is listening immediately on startup,
     not waiting for the first MCP request.
@@ -162,7 +179,7 @@ async def _start_tcp_listener(config: Config) -> tuple[GameStateManager, TCPList
         config: Application configuration
 
     Returns:
-        Tuple of (state_manager, tcp_listener)
+        Tuple of (state_manager, tcp_listener, commentary_engine)
     """
     logger = logging.getLogger(__name__)
 
@@ -174,6 +191,19 @@ async def _start_tcp_listener(config: Config) -> tuple[GameStateManager, TCPList
     state_manager.on_state_change(_create_terminal_display_callback())
     logger.info("Terminal display callback registered")
 
+    # Create run context and commentary engine
+    run_context = RunContext()
+    commentary_engine = CommentaryEngine(run_context)
+    logger.info("CommentaryEngine initialized")
+
+    # Register commentary callback (displays to terminal)
+    commentary_engine.on_commentary_generated(_create_commentary_callback())
+    logger.info("Commentary terminal display callback registered")
+
+    # Register commentary engine as state change callback
+    state_manager.on_state_change(commentary_engine.on_state_change)
+    logger.info("Commentary engine registered as state callback")
+
     # Create and start TCP listener
     tcp_listener = TCPListener(
         state_manager, host=config.tcp_host, port=config.tcp_port
@@ -181,7 +211,7 @@ async def _start_tcp_listener(config: Config) -> tuple[GameStateManager, TCPList
     await tcp_listener.start()
     logger.info(f"TCP listener started on {config.tcp_host}:{config.tcp_port}")
 
-    return state_manager, tcp_listener
+    return state_manager, tcp_listener, commentary_engine
 
 
 async def _stop_tcp_listener(tcp_listener: TCPListener) -> None:
@@ -226,10 +256,13 @@ def run_server(config: Config) -> int:
         """Async wrapper that starts TCP listener then runs MCP server."""
         state_manager: GameStateManager | None = None
         tcp_listener: TCPListener | None = None
+        commentary_engine: CommentaryEngine | None = None
 
         try:
             # Start TCP listener first
-            state_manager, tcp_listener = await _start_tcp_listener(config)
+            state_manager, tcp_listener, commentary_engine = await _start_tcp_listener(
+                config
+            )
 
             # Set the pre-initialized context so app_lifespan can use it
             set_pre_initialized_context(
@@ -237,6 +270,7 @@ def run_server(config: Config) -> int:
                     state_manager=state_manager,
                     tcp_listener=tcp_listener,
                     config=config,
+                    commentary_engine=commentary_engine,
                 )
             )
 
@@ -542,6 +576,49 @@ def _register_handlers(server: FastMCP[AppContext]) -> None:
         if result is None:
             return json.dumps({"status": "no_map", "message": "No map data available"})
         return json.dumps(result)
+
+    @server.resource("game://commentary")
+    def game_commentary_resource(
+        ctx: MCPContext,
+    ) -> str:
+        """Latest decision point analysis.
+
+        Returns the cached analysis for the current decision point.
+        Subscribe to this resource for automatic updates when new analysis is available.
+
+        Returns:
+            JSON object with status and analysis if available:
+            - status: "ready" if commentary exists, "no_commentary" if none
+            - decision_type: Type of decision (CARD_REWARD, EVENT, etc.)
+            - analysis: The generated analysis text
+        """
+        app_ctx = ctx.request_context.lifespan_context
+
+        if app_ctx.commentary_engine is None:
+            return json.dumps(
+                {
+                    "status": "no_commentary",
+                    "message": "Commentary engine not initialized",
+                }
+            )
+
+        commentary, decision_type = app_ctx.commentary_engine.get_cached_commentary()
+
+        if commentary is None:
+            return json.dumps(
+                {
+                    "status": "no_commentary",
+                    "message": "No decision point detected yet",
+                }
+            )
+
+        return json.dumps(
+            {
+                "status": "ready",
+                "decision_type": decision_type.value if decision_type else None,
+                "analysis": commentary,
+            }
+        )
 
     # ==============================================================================
     # MCP Prompt Registration
