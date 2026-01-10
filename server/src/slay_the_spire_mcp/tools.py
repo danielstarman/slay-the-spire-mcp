@@ -92,6 +92,14 @@ async def get_game_state(
     floor_history = state_manager.get_floor_history()
     state_dict["floor_history"] = [entry.model_dump() for entry in floor_history]
 
+    # Add staleness warning if applicable
+    if state_manager.is_state_stale():
+        age = state_manager.get_state_age_seconds()
+        state_dict["_warning"] = (
+            f"State may be stale - bridge disconnected, "
+            f"last update was {age:.0f} seconds ago"
+        )
+
     return state_dict
 
 

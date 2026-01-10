@@ -11,6 +11,7 @@ import asyncio
 import contextlib
 import json
 import logging
+import time
 from collections.abc import Callable
 from typing import Any
 
@@ -43,6 +44,9 @@ class GameStateManager:
         self._state_callbacks: list[Callable[[GameState], None]] = []
         self._lock = asyncio.Lock()
         self._floor_history: list[FloorHistory] = []
+        # Staleness tracking
+        self._last_state_time: float | None = None
+        self._bridge_connected: bool = False
 
     def get_current_state(self) -> GameState | None:
         """Get the current game state.
@@ -77,6 +81,7 @@ class GameStateManager:
         async with self._lock:
             self._previous_state = self._current_state
             self._current_state = new_state
+            self._last_state_time = time.monotonic()
             # Track floor transitions
             self._track_floor_transition_sync(new_state)
 
@@ -104,6 +109,7 @@ class GameStateManager:
         """
         self._previous_state = self._current_state
         self._current_state = new_state
+        self._last_state_time = time.monotonic()
 
         # Track floor transitions
         self._track_floor_transition_sync(new_state)
@@ -129,6 +135,45 @@ class GameStateManager:
             callback: Function to call when state changes
         """
         self._state_callbacks.append(callback)
+
+    def set_bridge_connected(self, connected: bool) -> None:
+        """Update bridge connection status.
+
+        Args:
+            connected: True if bridge is connected, False otherwise
+        """
+        self._bridge_connected = connected
+        if not connected:
+            logger.info("Bridge disconnected - state may become stale")
+
+    def get_state_age_seconds(self) -> float | None:
+        """Get seconds since last state update.
+
+        Returns:
+            Seconds since last state update, or None if never updated.
+        """
+        if self._last_state_time is None:
+            return None
+        return time.monotonic() - self._last_state_time
+
+    def is_state_stale(self, threshold_seconds: float = 30.0) -> bool:
+        """Check if state is likely stale.
+
+        State is considered stale if:
+        - Bridge is not connected AND
+        - Last update was more than threshold_seconds ago
+
+        Args:
+            threshold_seconds: How old state must be to be considered stale.
+                Default is 30 seconds.
+
+        Returns:
+            True if state is stale, False otherwise.
+        """
+        if self._bridge_connected:
+            return False
+        age = self.get_state_age_seconds()
+        return age is not None and age > threshold_seconds
 
     def _track_floor_transition_sync(self, new_state: GameState) -> None:
         """Track floor transitions and record visited nodes.
@@ -261,6 +306,14 @@ class TCPListener:
         if self._running:
             return
 
+        # Try to clean up stale processes if port is in use
+        from slay_the_spire_mcp.startup import cleanup_stale_port
+
+        if not cleanup_stale_port(self._host, self._port):
+            logger.warning(
+                f"Port {self._port} may still be in use after cleanup attempt"
+            )
+
         self._server = await asyncio.start_server(
             self._handle_client,
             self._host,
@@ -356,6 +409,9 @@ class TCPListener:
         addr = writer.get_extra_info("peername")
         logger.info(f"Bridge connected from {addr}")
 
+        # Mark bridge as connected
+        self._state_manager.set_bridge_connected(True)
+
         # Store writer for send_command
         async with self._writer_lock:
             self._client_writer = writer
@@ -434,6 +490,8 @@ class TCPListener:
                 exc_info=True,
             )
         finally:
+            # Mark bridge as disconnected
+            self._state_manager.set_bridge_connected(False)
             # Clear stored writer on disconnect
             async with self._writer_lock:
                 if self._client_writer is writer:

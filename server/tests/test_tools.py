@@ -187,6 +187,121 @@ class TestGetGameState:
 
 
 # ==============================================================================
+# get_game_state Staleness Warning Tests
+# ==============================================================================
+
+
+class TestGetGameStateStaleness:
+    """Tests for staleness warning in get_game_state."""
+
+    async def test_no_warning_when_fresh(
+        self,
+        state_manager: GameStateManager,
+        mock_tcp_listener: TCPListener,
+        sample_game_state: GameState,
+    ) -> None:
+        """No warning when state is fresh (connected, recent)."""
+        state_manager.set_bridge_connected(True)
+        state_manager.update_state_sync(sample_game_state)
+
+        result = await get_game_state(state_manager, mock_tcp_listener)
+
+        assert result is not None
+        assert "_warning" not in result
+
+    async def test_no_warning_when_connected(
+        self,
+        state_manager: GameStateManager,
+        mock_tcp_listener: TCPListener,
+        sample_game_state: GameState,
+    ) -> None:
+        """No warning when bridge is connected, even if state is old."""
+        from unittest.mock import patch
+
+        state_manager.set_bridge_connected(True)
+        state_manager.update_state_sync(sample_game_state)
+
+        # Mock old state time
+        with patch("slay_the_spire_mcp.state.time") as time_mock:
+            time_mock.monotonic.return_value = 1000.0
+            state_manager._last_state_time = 900.0  # 100 seconds old
+
+            result = await get_game_state(state_manager, mock_tcp_listener)
+
+        assert result is not None
+        assert "_warning" not in result
+
+    async def test_stale_warning_when_disconnected_and_old(
+        self,
+        state_manager: GameStateManager,
+        mock_tcp_listener: TCPListener,
+        sample_game_state: GameState,
+    ) -> None:
+        """Warning present when bridge disconnected and state is stale."""
+        from unittest.mock import patch
+
+        state_manager.update_state_sync(sample_game_state)
+        state_manager.set_bridge_connected(False)
+
+        # Mock time to make state stale
+        with patch("slay_the_spire_mcp.state.time") as time_mock:
+            time_mock.monotonic.return_value = 1000.0
+            state_manager._last_state_time = 950.0  # 50 seconds old
+
+            result = await get_game_state(state_manager, mock_tcp_listener)
+
+        assert result is not None
+        assert "_warning" in result
+        assert "stale" in result["_warning"].lower()
+
+    async def test_stale_warning_includes_age(
+        self,
+        state_manager: GameStateManager,
+        mock_tcp_listener: TCPListener,
+        sample_game_state: GameState,
+    ) -> None:
+        """Warning includes how old the state is."""
+        from unittest.mock import patch
+
+        state_manager.update_state_sync(sample_game_state)
+        state_manager.set_bridge_connected(False)
+
+        # Mock time to make state exactly 45 seconds old
+        with patch("slay_the_spire_mcp.state.time") as time_mock:
+            time_mock.monotonic.return_value = 1000.0
+            state_manager._last_state_time = 955.0  # 45 seconds old
+
+            result = await get_game_state(state_manager, mock_tcp_listener)
+
+        assert result is not None
+        assert "_warning" in result
+        # Should include the age in the message
+        assert "45" in result["_warning"]
+
+    async def test_no_warning_when_disconnected_but_recent(
+        self,
+        state_manager: GameStateManager,
+        mock_tcp_listener: TCPListener,
+        sample_game_state: GameState,
+    ) -> None:
+        """No warning when disconnected but state is recent (within threshold)."""
+        from unittest.mock import patch
+
+        state_manager.update_state_sync(sample_game_state)
+        state_manager.set_bridge_connected(False)
+
+        # Mock time - only 10 seconds old (within 30s threshold)
+        with patch("slay_the_spire_mcp.state.time") as time_mock:
+            time_mock.monotonic.return_value = 1000.0
+            state_manager._last_state_time = 990.0  # 10 seconds old
+
+            result = await get_game_state(state_manager, mock_tcp_listener)
+
+        assert result is not None
+        assert "_warning" not in result
+
+
+# ==============================================================================
 # play_card Tests
 # ==============================================================================
 
