@@ -14,7 +14,6 @@ from typing import Any
 
 import pytest
 
-from slay_the_spire_mcp.context import RunContext
 from slay_the_spire_mcp.detection import (
     DecisionType,
     detect_decision_point,
@@ -404,96 +403,6 @@ class TestDetectionEdgeCases:
         assert result is not None
         assert result.decision_type == DecisionType.CARD_SELECT
         assert result.context.selection_mode is None
-
-
-# ==============================================================================
-# context.py Coverage Tests
-# ==============================================================================
-
-
-class TestRunContextEdgeCases:
-    """Test edge cases in run context tracking."""
-
-    def test_hp_trending_with_zero_max_hp(self) -> None:
-        """HP trending handles zero max_hp gracefully (line 267, 273)."""
-        context = RunContext()
-        context.hp_history = [
-            (80, 80),
-            (70, 0),  # Zero max_hp - should be filtered
-            (60, 80),
-            (50, 80),
-        ]
-        # Should not crash, should handle zero division
-        result = context.is_hp_trending_down()
-        # Result may vary but shouldn't crash
-        assert isinstance(result, bool)
-
-    def test_hp_trending_with_only_zero_max_hp(self) -> None:
-        """HP trending with all zero max_hp returns False (line 273)."""
-        context = RunContext()
-        context.hp_history = [
-            (0, 0),
-            (0, 0),
-            (0, 0),
-        ]
-        result = context.is_hp_trending_down()
-        assert result is False
-
-    def test_hp_trending_with_exactly_three_entries(self) -> None:
-        """HP trending with exactly 3 entries works (lines 261-267)."""
-        context = RunContext()
-        context.hp_history = [
-            (80, 80),
-            (60, 80),
-            (40, 80),
-        ]
-        result = context.is_hp_trending_down()
-        assert result is True
-
-    def test_spending_with_low_peak(self) -> None:
-        """Spending check with low peak returns False (line 316)."""
-        context = RunContext()
-        context.gold_history = [50, 40, 30]  # Peak is 50 < 100
-        result = context.is_spending_too_fast()
-        assert result is False
-
-    def test_spending_with_insufficient_data(self) -> None:
-        """Spending check with < 3 entries returns False."""
-        context = RunContext()
-        context.gold_history = [100, 50]  # Only 2 entries
-        result = context.is_spending_too_fast()
-        assert result is False
-
-    def test_full_context_summary_with_events(self) -> None:
-        """Full context summary includes events (lines 440-447)."""
-        from slay_the_spire_mcp.context import EventRecord
-
-        context = RunContext()
-        context.current_floor = 10
-        context.current_act = 1
-        context.gold_history = [100, 150, 200]
-        context.hp_history = [(80, 80), (70, 80)]
-        context.events = [
-            EventRecord(floor=5, event_name="Neow", choice_made="Gold"),
-            EventRecord(floor=7, event_name="Shrine", choice_made="Pray"),
-        ]
-
-        summary = context.get_full_context_summary()
-
-        assert "Neow" in summary or "events" in summary.lower()
-        assert len(summary) > 0
-
-    def test_full_context_summary_with_spending_warning(self) -> None:
-        """Full context summary shows spending warning (line 437)."""
-        context = RunContext()
-        context.current_floor = 10
-        context.current_act = 1
-        context.gold_history = [200, 50, 30, 10]  # Fast spending
-        context.hp_history = [(80, 80)]
-
-        summary = context.get_full_context_summary()
-        # Should not crash; may or may not show warning based on logic
-        assert len(summary) > 0
 
 
 # ==============================================================================

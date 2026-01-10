@@ -8,7 +8,7 @@ Environment Variables:
     STS_TCP_HOST: TCP host for bridge connection (default: 127.0.0.1)
     STS_TCP_PORT: TCP port for bridge connection (default: 7777)
     STS_HTTP_PORT: HTTP port for MCP server (default: 8000)
-    STS_WS_PORT: WebSocket port for overlay (default: 31337)
+    STS_WS_PORT: WebSocket port (default: 31337)
     STS_LOG_LEVEL: Logging level (default: INFO)
     STS_TRANSPORT: MCP transport type: 'http' or 'stdio' (default: http)
     STS_MOCK_MODE: Enable mock mode (default: false)
@@ -33,15 +33,11 @@ from mcp.server.fastmcp import Context
 from mcp.server.session import ServerSession
 from pydantic import ValidationError
 
-from slay_the_spire_mcp.commentary import CommentaryEngine
 from slay_the_spire_mcp.config import Config, get_config, reset_config, set_config
-from slay_the_spire_mcp.context import RunContext
 from slay_the_spire_mcp.mock import MockModeError
-from slay_the_spire_mcp.overlay import OverlayPusher
 from slay_the_spire_mcp.server import (
     AppContext,
     PreInitializedContext,
-    _create_commentary_callback,
     _create_terminal_display_callback,
     app_lifespan,
     set_pre_initialized_context,
@@ -103,35 +99,9 @@ def run_stdin_server(config: Config) -> int:
 
         state_manager = GameStateManager()
         stdin_listener = StdinListener(state_manager)
-        overlay_pusher: OverlayPusher | None = None
 
         # Register terminal display callback
         state_manager.on_state_change(_create_terminal_display_callback())
-
-        # Create run context and commentary engine
-        run_context = RunContext()
-        commentary_engine = CommentaryEngine(run_context)
-        commentary_engine.on_commentary_generated(_create_commentary_callback())
-        state_manager.on_state_change(commentary_engine.on_state_change)
-
-        # Create and start overlay pusher if enabled
-        if config.overlay_enabled:
-            overlay_pusher = OverlayPusher(
-                host=config.overlay_host,
-                port=config.overlay_port,
-                reconnect_delay_ms=config.overlay_reconnect_delay_ms,
-                enabled=config.overlay_enabled,
-            )
-            await overlay_pusher.start()
-            logger.info(
-                f"Overlay pusher started, connecting to ws://{config.overlay_host}:{config.overlay_port}"
-            )
-
-            # Register overlay pusher callbacks
-            commentary_engine.on_commentary_generated(
-                overlay_pusher.on_commentary_generated
-            )
-            state_manager.on_state_change(overlay_pusher.on_state_change)
 
         try:
             # Start stdin listener (sends "ready\n")
@@ -144,7 +114,6 @@ def run_stdin_server(config: Config) -> int:
                     state_manager=state_manager,
                     tcp_listener=stdin_listener,  # Type: StdinListener implements GameListener
                     config=config,
-                    commentary_engine=commentary_engine,
                 )
             )
 
@@ -183,11 +152,6 @@ def run_stdin_server(config: Config) -> int:
             # Clean up pre-initialized context
             set_pre_initialized_context(None)
 
-            # Stop overlay pusher on shutdown
-            if overlay_pusher is not None:
-                await overlay_pusher.stop()
-                logger.info("Overlay pusher stopped")
-
             # Stop stdin listener on shutdown
             await stdin_listener.stop()
 
@@ -209,7 +173,6 @@ def run_mock_server(config: Config) -> int:
     - Mock lifespan that loads fixtures instead of connecting to TCP
     - Configurable transport (HTTP or stdio)
     - All tools, resources, and prompts registered
-    - Commentary engine for auto-analysis
 
     Args:
         config: Application configuration with mock_mode=True
@@ -226,19 +189,8 @@ def run_mock_server(config: Config) -> int:
         # Import here to avoid circular imports and to allow lazy loading
         from slay_the_spire_mcp.server import mock_lifespan
 
-        # Create run context and commentary engine for mock mode
-        run_context = RunContext()
-        commentary_engine = CommentaryEngine(run_context)
-        logger.info("CommentaryEngine initialized (mock mode)")
-
-        # Register commentary callback (displays to terminal)
-        commentary_engine.on_commentary_generated(_create_commentary_callback())
-        logger.info("Commentary terminal display callback registered (mock mode)")
-
-        # Create a mock-aware lifespan bound to our config and commentary engine
-        bound_lifespan = partial(
-            mock_lifespan, config=config, commentary_engine=commentary_engine
-        )
+        # Create a mock-aware lifespan bound to our config
+        bound_lifespan = partial(mock_lifespan, config=config)
 
         # Create a new FastMCP server with mock lifespan
         # We need to recreate the server with the lifespan and re-register tools
@@ -294,8 +246,8 @@ def run_mock_server(config: Config) -> int:
 
 async def _start_tcp_listener(
     config: Config,
-) -> tuple[GameStateManager, TCPListener, CommentaryEngine, OverlayPusher | None]:
-    """Start the TCP listener, commentary engine, and overlay pusher before the MCP server.
+) -> tuple[GameStateManager, TCPListener]:
+    """Start the TCP listener before the MCP server.
 
     This ensures port 7777 is listening immediately on startup,
     not waiting for the first MCP request.
@@ -304,7 +256,7 @@ async def _start_tcp_listener(
         config: Application configuration
 
     Returns:
-        Tuple of (state_manager, tcp_listener, commentary_engine, overlay_pusher)
+        Tuple of (state_manager, tcp_listener)
     """
     logger = logging.getLogger(__name__)
 
@@ -316,43 +268,6 @@ async def _start_tcp_listener(
     state_manager.on_state_change(_create_terminal_display_callback())
     logger.info("Terminal display callback registered")
 
-    # Create run context and commentary engine
-    run_context = RunContext()
-    commentary_engine = CommentaryEngine(run_context)
-    logger.info("CommentaryEngine initialized")
-
-    # Register commentary callback (displays to terminal)
-    commentary_engine.on_commentary_generated(_create_commentary_callback())
-    logger.info("Commentary terminal display callback registered")
-
-    # Register commentary engine as state change callback
-    state_manager.on_state_change(commentary_engine.on_state_change)
-    logger.info("Commentary engine registered as state callback")
-
-    # Create and start overlay pusher if enabled
-    overlay_pusher: OverlayPusher | None = None
-    if config.overlay_enabled:
-        overlay_pusher = OverlayPusher(
-            host=config.overlay_host,
-            port=config.overlay_port,
-            reconnect_delay_ms=config.overlay_reconnect_delay_ms,
-            enabled=config.overlay_enabled,
-        )
-        await overlay_pusher.start()
-        logger.info(
-            f"Overlay pusher started, connecting to ws://{config.overlay_host}:{config.overlay_port}"
-        )
-
-        # Register overlay pusher as commentary callback
-        commentary_engine.on_commentary_generated(
-            overlay_pusher.on_commentary_generated
-        )
-        logger.info("Overlay pusher registered as commentary callback")
-
-        # Register overlay pusher as state change callback (for clearing)
-        state_manager.on_state_change(overlay_pusher.on_state_change)
-        logger.info("Overlay pusher registered as state callback")
-
     # Create and start TCP listener
     tcp_listener = TCPListener(
         state_manager, host=config.tcp_host, port=config.tcp_port
@@ -360,7 +275,7 @@ async def _start_tcp_listener(
     await tcp_listener.start()
     logger.info(f"TCP listener started on {config.tcp_host}:{config.tcp_port}")
 
-    return state_manager, tcp_listener, commentary_engine, overlay_pusher
+    return state_manager, tcp_listener
 
 
 async def _stop_tcp_listener(tcp_listener: TCPListener) -> None:
@@ -405,17 +320,10 @@ def run_server(config: Config) -> int:
         """Async wrapper that starts TCP listener then runs MCP server."""
         state_manager: GameStateManager | None = None
         tcp_listener: TCPListener | None = None
-        commentary_engine: CommentaryEngine | None = None
-        overlay_pusher: OverlayPusher | None = None
 
         try:
             # Start TCP listener first
-            (
-                state_manager,
-                tcp_listener,
-                commentary_engine,
-                overlay_pusher,
-            ) = await _start_tcp_listener(config)
+            state_manager, tcp_listener = await _start_tcp_listener(config)
 
             # Set the pre-initialized context so app_lifespan can use it
             set_pre_initialized_context(
@@ -423,7 +331,6 @@ def run_server(config: Config) -> int:
                     state_manager=state_manager,
                     tcp_listener=tcp_listener,
                     config=config,
-                    commentary_engine=commentary_engine,
                 )
             )
 
@@ -470,11 +377,6 @@ def run_server(config: Config) -> int:
         finally:
             # Clean up pre-initialized context
             set_pre_initialized_context(None)
-
-            # Stop overlay pusher on shutdown
-            if overlay_pusher is not None:
-                await overlay_pusher.stop()
-                logger.info("Overlay pusher stopped")
 
             # Stop TCP listener on shutdown
             if tcp_listener is not None:
@@ -734,49 +636,6 @@ def _register_handlers(server: FastMCP[AppContext]) -> None:
         if result is None:
             return json.dumps({"status": "no_map", "message": "No map data available"})
         return json.dumps(result)
-
-    @server.resource("game://commentary")
-    def game_commentary_resource(
-        ctx: MCPContext,
-    ) -> str:
-        """Latest decision point analysis.
-
-        Returns the cached analysis for the current decision point.
-        Subscribe to this resource for automatic updates when new analysis is available.
-
-        Returns:
-            JSON object with status and analysis if available:
-            - status: "ready" if commentary exists, "no_commentary" if none
-            - decision_type: Type of decision (CARD_REWARD, EVENT, etc.)
-            - analysis: The generated analysis text
-        """
-        app_ctx = ctx.request_context.lifespan_context
-
-        if app_ctx.commentary_engine is None:
-            return json.dumps(
-                {
-                    "status": "no_commentary",
-                    "message": "Commentary engine not initialized",
-                }
-            )
-
-        commentary, decision_type = app_ctx.commentary_engine.get_cached_commentary()
-
-        if commentary is None:
-            return json.dumps(
-                {
-                    "status": "no_commentary",
-                    "message": "No decision point detected yet",
-                }
-            )
-
-        return json.dumps(
-            {
-                "status": "ready",
-                "decision_type": decision_type.value if decision_type else None,
-                "analysis": commentary,
-            }
-        )
 
     # ==============================================================================
     # MCP Prompt Registration
